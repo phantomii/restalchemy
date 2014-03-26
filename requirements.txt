@@ -1,0 +1,5 @@
+pbr==0.5.21
+requests==2.1.0
+anyjson==0.3.3
+iso8601==0.1.8
+pasteDeploy==1.5.0
