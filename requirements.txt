@@ -3,3 +3,5 @@ requests==2.1.0
 anyjson==0.3.3
 iso8601==0.1.8
 pasteDeploy==1.5.0
+wsgiref==0.1.2
+WebOb==1.3.1

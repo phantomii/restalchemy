@@ -1,0 +1,52 @@
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
+#
+# Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
+#
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+import re
+
+
+UUID_RE_TEMPLATE = "[a-f0-9]{8,8}-([a-f0-9]{4,4}-){3,3}[a-f0-9]{12,12}"
+
+
+class BaseType(object):
+
+    def __init__(self, pattern):
+        super(BaseType, self).__init__()
+        self._pattern = re.compile(pattern)
+
+    def validate(self, value):
+        return value == None or self._pattern.match(value)
+
+
+class UUIDType(BaseType):
+
+    def __init__(self):
+        super(UUIDType, self).__init__(pattern="^%s$" % UUID_RE_TEMPLATE)
+
+
+class StringType(BaseType):
+
+    def __init__(self, min_length=0, max_length=255):
+        super(StringType, self).__init__(pattern="^.{%d,%d}$" % (
+            min_length, max_length))
+
+
+class UriType(BaseType):
+
+    def __init__(self):
+        super(UriType, self).__init__(pattern="^(/[a-z0-9\-_]*)*/%s$" %
+                                      UUID_RE_TEMPLATE)
