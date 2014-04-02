@@ -29,7 +29,7 @@ class BaseType(object):
         self._pattern = re.compile(pattern)
 
     def validate(self, value):
-        return value == None or self._pattern.match(value)
+        return True if (value == None or self._pattern.match(value)) else False
 
 
 class UUIDType(BaseType):
@@ -50,3 +50,44 @@ class UriType(BaseType):
     def __init__(self):
         super(UriType, self).__init__(pattern="^(/[a-z0-9\-_]*)*/%s$" %
                                       UUID_RE_TEMPLATE)
+
+
+class MacType(BaseType):
+
+    def __init__(self):
+        super(MacType, self).__init__("^([0-9a-f]{2,2}:){5,5}[0-9a-f]{2,2}$")
+
+
+class BasePythonType(object):
+
+    def __init__(self, python_type):
+        self._python_type = python_type
+
+    def validate(self, value):
+        return isinstance(value, self._python_type)
+
+
+class IntegerType(BasePythonType):
+
+    def __init__(self, min_value=0, max_value=65535):
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def validate(self, value):
+        return (isinstance(value, int) and value >= self.min_value and
+                value <= self.max_value)
+
+
+class DictType(BasePythonType):
+
+    def __init__(self):
+        super(DictType, self).__init__(dict)
+
+
+class EnumType(object):
+
+    def __init__(self, enum_values):
+        self._enums_values = enum_values
+
+    def validate(self, value):
+        return value in self._enums_values

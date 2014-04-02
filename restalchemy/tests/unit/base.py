@@ -16,8 +16,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import random
+import string
 import unittest
 
 
 class BaseTestCase(unittest.TestCase):
-    pass
+
+    def string_generator(self, size=6, chars=string.ascii_uppercase +
+                         string.digits):
+        return ''.join(random.choice(chars) for _ in range(size))
