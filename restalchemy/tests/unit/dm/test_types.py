@@ -112,6 +112,9 @@ class StringTestCase(BaseTestCase):
     def test_incorrect_max_value(self):
         self.assertFalse(self.test_instance.validate(self.string_generator(9)))
 
+    def test_correct_unicide_value(self):
+        self.assertTrue(self.test_instance.validate(u'TestTest'))
+
 
 class UriTestCase(BaseTestCase):
 

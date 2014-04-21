@@ -79,7 +79,7 @@ class String(BasePythonType):
 
     #TODO(Eugene Frolov): Make possible to create "infinite" value
     def __init__(self, min_length=0, max_length=255):
-        super(String, self).__init__(str)
+        super(String, self).__init__(basestring)
         self.min_length = int(min_length)
         self.max_length = int(max_length)
 
