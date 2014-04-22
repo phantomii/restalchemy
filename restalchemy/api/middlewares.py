@@ -16,6 +16,8 @@
 
 from webob import dec
 
+from restalchemy.common import context
+
 
 class Middleware(object):
     """Base WSGI middleware wrapper.
@@ -48,3 +50,9 @@ class Middleware(object):
             return response
         response = req.get_response(self.application)
         return self.process_response(response)
+
+
+class ContextMiddleware(Middleware):
+
+    def process_request(self, req):
+        req.context = context.Context()

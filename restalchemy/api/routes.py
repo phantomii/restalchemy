@@ -113,7 +113,7 @@ class Route(object):
             for name in filter(lambda x: node.is_route(x), dir(node)):
                 try:
                     route = node.get_route(name)
-                    controller = route.get_controller()
+                    controller = route.get_controller(context=None)
                     resource = controller.get_resource()
                     route_path = posixpath.join(path, name, '')
                     if route.check_allow_methods(GET):
@@ -248,30 +248,35 @@ def route(route_class, resource_route=False):
         def __init__(self, *args, **kwargs):
             super(RouteBased, self).__init__(*args, **kwargs)
 
+        def get_context_from_request(self, req):
+            try:
+                return req.context
+            except AttributeError:
+                return None
+
+        def get_worker(self, req, name):
+            context = self.get_context_from_request(req)
+            return getattr(self.get_controller(context=context), name, None)
+
         def _filter(self, req, parent_resource=None):
-            worker = getattr(self.get_controller(), 'filter', None)
             return super(RouteBased, self)._filter(
-                req, worker, parent_resource)
+                req, self.get_worker(req, 'filter'), parent_resource)
 
         def _create(self, req, parent_resource=None):
-            worker = getattr(self.get_controller(), 'create', None)
             return super(RouteBased, self)._create(
-                req, worker, parent_resource)
+                req, self.get_worker(req, 'create'), parent_resource)
 
         def _get(self, req, uuid, parent_resource=None):
-            worker = getattr(self.get_controller(), 'get', None)
-            return super(RouteBased, self)._get(req, uuid, worker,
-                                                parent_resource)
+            return super(RouteBased, self)._get(
+                req, uuid, self.get_worker(req, 'get'), parent_resource)
 
         def _delete(self, req, uuid, parent_resource=None):
-            worker = getattr(self.get_controller(), 'delete', None)
-            return super(RouteBased, self)._delete(req, uuid, worker,
-                                                   parent_resource)
+            return super(RouteBased, self)._delete(
+                req, uuid, self.get_worker(req, 'delete'), parent_resource)
 
         def _update(self, req, uuid, parent_resource=None):
-            worker = getattr(self.get_controller(), 'update', None)
-            return super(RouteBased, self)._update(req, uuid, worker,
-                                                   parent_resource)
+            return super(RouteBased, self)._update(
+                req, uuid, self.get_worker(req, 'update'), parent_resource)
 
         @classmethod
         def is_resource_route(cls):

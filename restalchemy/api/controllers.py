@@ -22,6 +22,9 @@ from restalchemy.common import exceptions as exc
 class Controller(object):
     __resource__ = None
 
+    def __init__(self, context):
+        self._context = context
+
     @classmethod
     def get_resource(cls):
         return cls.__resource__
@@ -44,3 +47,6 @@ class Controller(object):
 
     def update(self, uuid, **kwargs):
         raise exc.NotImplementedError()
+
+    def get_context(self):
+        return self._context
