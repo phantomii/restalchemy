@@ -16,7 +16,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import collections
 import inspect
 import posixpath
 
@@ -31,38 +30,17 @@ CREATE = 'CREATE'
 UPDATE = 'UPDATE'
 DELETE = 'DELETE'
 
-
-class RoutesMap(object):
-
-    resource_map = {}
-
-    @classmethod
-    def get_resource_location(cls, resource):
-        # TODO(Eugene Frolov): Rewrite for the case when a resource has more
-        #                      than one path.
-        return cls.resource_map[type(resource)][0] % {
-            'uuid': resource.get_id()}
-
-    @classmethod
-    def set_resource_map(cls, resource_map):
-        cls.resource_map = resource_map
+COLLECTION_ROUTE = 1
+RESOURCE_ROUTE = 2
 
 
 class Route(object):
     __controller__ = None
-    __allow_methods__ = [GET, PUT, CREATE, UPDATE, DELETE]
+    __allow_methods__ = [GET, CREATE, UPDATE, DELETE, FILTER]
 
-    def __init__(self):
+    def __init__(self, req):
         super(Route, self).__init__()
-        self.__collection_method_mapping = {
-            GET: self._filter,
-            POST: self._create
-        }
-        self.__resource_method_mapping = {
-            GET: self._get,
-            DELETE: self._delete,
-            PUT: self._update
-        }
+        self._req = req
 
     @classmethod
     def is_resource_route(cls):
@@ -95,8 +73,12 @@ class Route(object):
             return False
 
     @classmethod
+    def get_controller_class(cls):
+        return cls.__controller__
+
+    @classmethod
     def get_controller(cls, *args, **kwargs):
-        return cls.__controller__(*args, **kwargs)
+        return cls.get_controller_class()(*args, **kwargs)
 
     @classmethod
     def check_allow_methods(cls, *args):
@@ -106,136 +88,114 @@ class Route(object):
         return True
 
     @classmethod
+    def get_allow_methods(cls):
+        return cls.__allow_methods__
+
+    def get_method_by_route_type(self, route_type):
+        if route_type == COLLECTION_ROUTE:
+            mapping = {GET: FILTER, POST: CREATE}
+        else:
+            mapping = {GET: GET, PUT: UPDATE, DELETE: DELETE}
+        try:
+            return mapping[self._req.method]
+        except KeyError:
+            # TODO(Eugene Frolov): Specify error type and message.
+            raise exc.NotFoundError()
+
+    @classmethod
     def build_resource_map(cls, root_route, start_path='/'):
 
-        def build(node, path):
+        def build_path(resource, location_path):
+            tpl_name = '%(' + resource.__name__.lower() + '_uuid)s'
+            return posixpath.join(location_path, tpl_name)
+
+        def build(route, path):
             result = []
-            for name in filter(lambda x: node.is_route(x), dir(node)):
-                try:
-                    route = node.get_route(name)
-                    controller = route.get_controller(context=None)
-                    resource = controller.get_resource()
-                    route_path = posixpath.join(path, name, '')
-                    if route.check_allow_methods(GET):
-                        route_path = posixpath.join(route_path, '%(uuid)s')
-                        if resource is not None:
-                            result.append((resource, route_path))
-                    result = result + build(route, route_path)
-                except AttributeError:
-                    pass
+
+            controller = route.get_controller_class()
+            resource = controller.get_resource()
+
+            if route.check_allow_methods(GET):
+                route_path = build_path(resource, path)
+                result.append((resource, controller, route_path))
+
+            for name in filter(lambda x: route.is_route(x), dir(route)):
+                new_route = route.get_route(name)
+                if new_route.is_resource_route():
+                    new_path = build_path(resource, path)
+                    new_path = posixpath.join(new_path, name, '')
+                else:
+                    new_path = posixpath.join(path, name, '')
+                result += build(route.get_route(name), new_path)
+
             return result
 
-        resource_map = collections.defaultdict(lambda: [])
+        class ResourceLocator(object):
 
-        for resource, path in build(root_route, start_path):
-            resource_map[resource].append(path)
-        return dict(resource_map)
+            def __init__(self, uri_template, controller):
+                self.uri_template = uri_template
+                self._controller = controller
 
-    def _result_processing(self, result, status_code=200, headers={},
-                           add_location=False):
+            def get_uri(self, resource):
+                param_name = '%s_uuid' % type(resource).__name__.lower()
+                return self.uri_template % {param_name: resource.get_id()}
 
-        def correct(body, c=status_code, h={}, *args):
-            if add_location:
-                headers['Location'] = RoutesMap.get_resource_location(body)
-            headers.update(h)
-            return body, c, headers
+            def get_resource(self, request, uri):
+                uuid = posixpath.basename(uri)
+                return self._controller(request=request).get_resource_by_uuid(
+                    uuid)
 
-        if type(result) == tuple:
-            return correct(*result)
-        return correct(result)
+        resource_map = {}
 
-    def _create(self, req, worker=None, parent_resource=None):
-        if not worker:
-            raise exc.NotImplementedError()
+        for res, controller, template in build(root_route, start_path):
+            resource_map[res] = ResourceLocator(template, controller)
 
-        kwargs = req.parsed_body
-        if parent_resource:
-            kwargs['parent_resource'] = parent_resource
+        return resource_map
 
-        return self._result_processing(worker(**kwargs),
-                                       status_code=201, add_location=True)
-
-    def _get(self, req, uuid, worker=None, parent_resource=None):
-        if not worker:
-            raise exc.NotImplementedError()
-
-        kwargs = {'uuid': uuid}
-        if parent_resource:
-            kwargs['parent_resource'] = parent_resource
-
-        return self._result_processing(worker(**kwargs))
-
-    def _filter(self, req, worker=None, parent_resource=None):
-        if not worker:
-            raise exc.NotImplementedError()
-
-        # TODO(Eugene Frolov): Method returns NestedMultiDict which it
-        #   includes multiple identical keys. It is problem. One must
-        #   writes a correct translation NestedMultiDict to a type of dict.
-        kwargs = dict(req.params)
-        if parent_resource:
-            kwargs['parent_resource'] = parent_resource
-
-        return self._result_processing(worker(**kwargs))
-
-    def _delete(self, req, uuid, worker=None, parent_resource=None):
-        if not worker:
-            raise exc.NotImplementedError()
-
-        kwargs = {'uuid': uuid}
-        if parent_resource:
-            kwargs['parent_resource'] = parent_resource
-
-        return self._result_processing(worker(**kwargs), status_code=204)
-
-    def _update(self, req, uuid, worker=None, parent_resource=None):
-        if not worker:
-            raise exc.NotImplementedError()
-
-        kwargs = {'uuid': uuid}
-        # TODO(Eugene Frolov): Raise Exception if uuid exist in parsed_body
-        kwargs.update(req.parsed_body)
-        if parent_resource:
-            kwargs['parent_resource'] = parent_resource
-
-        return self._result_processing(worker(**kwargs))
-
-    def do_request(self, req, parent_resource=None):
+    def do(self, parent_resource=None):
         # TODO(Eugene Frolov): Check the possibility to pass to the method
         #                      specified in a route.
+        name, path = self._req.path_info_pop(), self._req.path_info_peek()
 
-        name, path = req.path_info_pop(), req.path_info_peek()
-        method = req.method
+        if path is None:
+            # Collection or Resource method
+            ctrl_method = (self.get_method_by_route_type(COLLECTION_ROUTE)
+                           if name == '' else
+                           self.get_method_by_route_type(RESOURCE_ROUTE))
+            if self.check_allow_methods(ctrl_method):
+                worker = self.get_controller(request=self._req)
 
-        if (name == '' and path is None):
-            # Collection method
-            worker = self.__collection_method_mapping[method]
-            return worker(req, parent_resource=parent_resource)
-        elif (name != '' and path is None):
-            # Resource method
-            worker = self.__resource_method_mapping[method]
-            return worker(req, name, parent_resource)
+                if name == '':
+                    # Collection method
+                    return worker.do_collection(parent_resource)
+
+                # Resource method
+                return worker.do_resource(name, parent_resource)
+            else:
+                raise exc.NotFoundError()
+
         elif (name != '' and path is not None and self.is_route(name)):
             # Next route
             route = self.get_route(name)
             if route.is_resource_route():
                 raise exc.NotFoundError()
-            worker = route()
-            return worker.do_request(req, parent_resource)
+            worker = route(self._req)
+            return worker.do(parent_resource)
         elif (name != '' and path == 'actions'):
             # Action route
             # TODO(Eugene Frolov): Impliment action processing
             pass
         elif (name != '' and path is not None):
             # Intermediate resource route
-            worker = self.__resource_method_mapping[GET]
-            parent_resource = worker(req, name, parent_resource)[0]
-            name, path = req.path_info_pop(), req.path_info_peek()
+            worker = self.get_controller(self._req)
+            parent_resource = worker.get_resource_by_uuid(
+                name, parent_resource)
+            name, path = self._req.path_info_pop(), self._req.path_info_peek()
             route = self.get_route(name)
             if route.is_collection_route():
                 raise exc.NotFoundError()
-            worker = route()
-            return worker.do_request(req, parent_resource)
+            worker = route(self._req)
+            return worker.do(parent_resource)
         else:
             # Other
             raise exc.NotFoundError()
@@ -244,39 +204,6 @@ class Route(object):
 def route(route_class, resource_route=False):
 
     class RouteBased(route_class):
-
-        def __init__(self, *args, **kwargs):
-            super(RouteBased, self).__init__(*args, **kwargs)
-
-        def get_context_from_request(self, req):
-            try:
-                return req.context
-            except AttributeError:
-                return None
-
-        def get_worker(self, req, name):
-            context = self.get_context_from_request(req)
-            return getattr(self.get_controller(context=context), name, None)
-
-        def _filter(self, req, parent_resource=None):
-            return super(RouteBased, self)._filter(
-                req, self.get_worker(req, 'filter'), parent_resource)
-
-        def _create(self, req, parent_resource=None):
-            return super(RouteBased, self)._create(
-                req, self.get_worker(req, 'create'), parent_resource)
-
-        def _get(self, req, uuid, parent_resource=None):
-            return super(RouteBased, self)._get(
-                req, uuid, self.get_worker(req, 'get'), parent_resource)
-
-        def _delete(self, req, uuid, parent_resource=None):
-            return super(RouteBased, self)._delete(
-                req, uuid, self.get_worker(req, 'delete'), parent_resource)
-
-        def _update(self, req, uuid, parent_resource=None):
-            return super(RouteBased, self)._update(
-                req, uuid, self.get_worker(req, 'update'), parent_resource)
 
         @classmethod
         def is_resource_route(cls):

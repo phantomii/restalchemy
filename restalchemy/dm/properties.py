@@ -93,9 +93,15 @@ class PropertySearcher(object):
         equal_func = issubclass if inspect.isclass(prop) else isinstance
         return equal_func(prop, args)
 
+    def get_target_attr(self, name):
+        if inspect.isclass(self._target):
+            return getattr(self._target, name)
+        else:
+            return self._target.get_attr(name)
+
     def get_property(self, name, *args):
         try:
-            prop = self._target.get_attr(name)
+            prop = self.get_target_attr(name)
             if self.is_property(prop, *args):
                 return prop
             else:
@@ -107,7 +113,7 @@ class PropertySearcher(object):
     def search_all(self, *args):
         property_filter = lambda x: not x.startswith('__')
         for name in filter(property_filter, dir(self._target)):
-            prop = self._target.get_attr(name)
+            prop = self.get_target_attr(name)
             if self.is_property(prop, *args):
                 yield name, prop
 

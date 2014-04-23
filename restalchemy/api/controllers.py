@@ -16,14 +16,100 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import webob
+
+from restalchemy.api import packers
+from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
 
 
 class Controller(object):
     __resource__ = None
 
-    def __init__(self, context):
-        self._context = context
+    def __init__(self, request):
+        self._req = request
+
+    def get_packer(self, content_type):
+        packer = packers.get_packer(content_type)
+        return packer(self.get_resource(), request=self._req)
+
+    def process_result(self, result, status_code=200, headers={},
+                       add_location=False):
+
+        def correct(body, c=status_code, h={}, *args):
+            if add_location:
+                headers['Location'] = resources.ResourceMap.get_location(body)
+            headers.update(h)
+            return body, c, headers
+
+        def create_response(body, status, headers):
+            if body is not None:
+                headers['Content-Type'] = packers.get_content_type(headers)
+                packer = self.get_packer(headers['Content-Type'])
+                body = packer.pack(body)
+
+            return webob.Response(
+                body=body,
+                status=status,
+                content_type=headers.get('Content-Type', None),
+                headerlist=[(k, v) for k, v in headers.items()])
+
+        if type(result) == tuple:
+            return create_response(*correct(*result))
+        else:
+            return create_response(*correct(result))
+
+    def _make_kwargs(self, parent_resource, **kwargs):
+        if parent_resource:
+            kwargs['parent_resource'] = parent_resource
+        return kwargs
+
+    def do_collection(self, parent_resource=None):
+        method = self._req.method
+
+        if method == 'GET':
+            # TODO(Eugene Frolov): Method returns NestedMultiDict which it
+            #   includes multiple identical keys. It is problem. One must
+            #   writes a correct translation NestedMultiDict to a type of dict.
+            kwargs = self._make_kwargs(parent_resource,
+                                       **dict(self._req.params))
+            return self.process_result(self.filter(**kwargs))
+        elif method == 'POST':
+            content_type = packers.get_content_type(self._req.headers)
+            packer = self.get_packer(content_type)
+            kwargs = self._make_kwargs(parent_resource,
+                                       **packer.unpack(self._req.body))
+
+            return self.process_result(self.create(**kwargs), 201,
+                                       add_location=True)
+        else:
+            # TODO(Eugene Frolov): Specify exception code and message
+            raise exc.NotFoundError()
+
+    def get_resource_by_uuid(self, uuid, parent_resource=None):
+        kwargs = self._make_kwargs(parent_resource)
+        result = self.get(uuid=uuid, **kwargs)
+        if isinstance(result, tuple):
+            return result[0]
+        return result
+
+    def do_resource(self, uuid, parent_resource=None):
+        method = self._req.method
+        kwargs = self._make_kwargs(parent_resource)
+
+        if method == 'GET':
+            return self.process_result(self.get(uuid=uuid, **kwargs))
+        elif method == 'PUT':
+            content_type = packers.get_content_type(self._req.headers)
+            packer = self.get_packer(content_type)
+            kwargs.update(packer.unpack(self._req.body))
+            return self.process_result(self.update(uuid=uuid, **kwargs))
+        elif method == 'DELETE':
+            result = self.delete(uuid=uuid, **kwargs)
+            return self.process_result(result, 200 if result else 204)
+        else:
+            # TODO(Eugene Frolov): Specify exception code and message
+            raise exc.NotFoundError()
 
     @classmethod
     def get_resource(cls):
@@ -49,4 +135,7 @@ class Controller(object):
         raise exc.NotImplementedError()
 
     def get_context(self):
-        return self._context
+        try:
+            return self._req.context
+        except AttributeError:
+            return None

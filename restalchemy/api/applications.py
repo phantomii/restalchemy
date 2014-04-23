@@ -16,10 +16,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import webob
 from webob import dec
 
-from restalchemy.api import packers
+from restalchemy.api import resources
 from restalchemy.api import routes
 
 
@@ -30,28 +29,13 @@ class WSGIApp(object):
 
     def __init__(self, route_class):
         super(WSGIApp, self).__init__()
-        self._main_route = routes.route(route_class)()
-        routes.RoutesMap.set_resource_map(
+        self._main_route = routes.route(route_class)
+        resources.ResourceMap.set_resource_map(
             routes.Route.build_resource_map(route_class))
-
-    def _get_content_type(self, headers):
-        return headers.get('Content-Type') or DEFAULT_CONTENT_TYPE
 
     @dec.wsgify
     def __call__(self, req):
-        if req.body:
-            content_type = self._get_content_type(req.headers)
-            req.parsed_body = packers.unpack(content_type, req.body)
-
-        body, status, headers = self._main_route.do_request(req)
-
-        headers['Content-Type'] = self._get_content_type(headers)
-
-        return webob.Response(
-            body=packers.pack(headers['Content-Type'], body),
-            status=status,
-            content_type=headers.get('Content-Type'),
-            headerlist=[(k, v) for k, v in headers.items()])
+        return self._main_route(req).do()
 
 
 Application = WSGIApp
