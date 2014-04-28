@@ -40,7 +40,8 @@ class ActionHandler(object):
 
     def do(self, fn, controller, *args, **kwargs):
         if fn:
-            return fn(self=controller, *args, **kwargs)
+            result = fn(self=controller, *args, **kwargs)
+            return controller.process_result(result)
         else:
             raise exc.NotImplementedError()
 
