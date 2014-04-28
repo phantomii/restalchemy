@@ -147,7 +147,10 @@ class PropertyBasedObject(collections.Mapping):
 
     def __getattribute__(self, name):
         attr = super(PropertyBasedObject, self).__getattribute__(name)
-        ps = super(PropertyBasedObject, self).__getattribute__('_ps')
+        try:
+            ps = super(PropertyBasedObject, self).__getattribute__('_ps')
+        except AttributeError:
+            return attr
         property_type = super(PropertyBasedObject, self).__getattribute__(
             '_property_type')
         if ps.is_property(attr, *property_type):
@@ -156,7 +159,11 @@ class PropertyBasedObject(collections.Mapping):
 
     def __setattr__(self, name, value):
         try:
-            ps = super(PropertyBasedObject, self).__getattribute__('_ps')
+            try:
+                ps = super(PropertyBasedObject, self).__getattribute__('_ps')
+            except AttributeError:
+                return super(PropertyBasedObject, self).__setattr__(name,
+                                                                    value)
             property_type = super(PropertyBasedObject, self).__getattribute__(
                 '_property_type')
             attr = ps.get_property(name, *property_type)
