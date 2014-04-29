@@ -195,14 +195,15 @@ def container(**kwargs):
     class Container(BaseContainer):
 
         def __init__(self):
+            self._ps = PropertySearcher(self)
             for k, v in kwargs.items():
                 setattr(self, k, v())
 
         @__builtin__.property
         def value(self):
             result = {}
-            for k, v in self._ps.search_all(BaseProperty):
-                result[k] = v
+            for k, v in self._ps.search_all(AbstractProperty):
+                result[k] = v.value
             return result
 
         @value.setter
@@ -211,5 +212,19 @@ def container(**kwargs):
                 getattr(self, k).value = v
 
         def check(self):
-            for k, v in self._ps.search_all(BaseProperty):
+            for k, v in self._ps.search_all(AbstractProperty):
                 v.check()
+
+        def get_attr(self, name):
+            # FIXME(Eugene Frolov): HOT FIX. Skip value parameter to break
+            # infinity recursion (value -> property searcher -> value).
+            if name == 'value':
+                return None
+
+            return getattr(self, name)
+
+        def restore_value(self, value):
+            for k, v in value.items():
+                getattr(self, k).restore_value(v)
+
+    return Container
