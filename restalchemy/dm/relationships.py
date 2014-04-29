@@ -35,7 +35,7 @@ def relationship(*args, **kwargs):
         def _safe_value(self, value):
             if isinstance(value, self._models):
                 return value
-            raise exc.ValueError(classname=self._models, value=value)
+            raise exc.ValueError(class_name=self._models, value=value)
 
         def restore_value(self, value):
             self._value = self._safe_value(value)
