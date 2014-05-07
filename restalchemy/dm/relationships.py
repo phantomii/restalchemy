@@ -33,7 +33,7 @@ def relationship(*args, **kwargs):
             self._value = None
 
         def _safe_value(self, value):
-            if isinstance(value, self._models):
+            if value is None or isinstance(value, self._models):
                 return value
             raise exc.ValueError(class_name=self._models, value=value)
 
