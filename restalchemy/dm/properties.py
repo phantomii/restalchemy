@@ -35,6 +35,10 @@ class AbstractProperty(object):
     def check(self):
         pass
 
+    @abc.abstractmethod
+    def set_value_force(self, value):
+        pass
+
 
 class BaseProperty(AbstractProperty):
     pass
@@ -69,6 +73,9 @@ def property(value_type, default=None, required=False, read_only=False):
         def value(self, value):
             if self._read_only:
                 raise exc.ReadOnlyPropertyError()
+            self._value = self._safe_value(value)
+
+        def set_value_force(self, value):
             self._value = self._safe_value(value)
 
         def restore_value(self, value):
@@ -217,6 +224,10 @@ def container(**kwargs):
         def value(self, value):
             for k, v in value.items():
                 getattr(self, k).value = v
+
+        def set_value_force(self, value):
+            for k, v in value.items():
+                getattr(self, k).set_value_force(value)
 
         def check(self):
             for k, v in self._ps.search_all(AbstractProperty):

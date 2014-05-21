@@ -50,6 +50,9 @@ def relationship(*args, **kwargs):
                 raise exc.ReadOnlyPropertyError
             self._value = self._safe_value(value)
 
+        def set_value_force(self, value):
+            self._value = self._safe_value(value)
+
         def is_read_only(self):
             return self._read_only
 
