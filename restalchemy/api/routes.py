@@ -119,42 +119,72 @@ class Route(BaseRoute):
             raise exc.NotFoundError()
 
     @classmethod
-    def build_resource_map(cls, root_route, start_path='/'):
+    def build_resource_map(cls, root_route, path_stack=None):
+        path_stack = path_stack or []
 
-        def build_path(resource, location_path):
-            tpl_name = '%(' + resource.__name__.lower() + '_uuid)s'
-            return posixpath.join(location_path, tpl_name)
+        def build_path(resource, path_stack):
+            path_stack = path_stack[:]
+            path_stack.append(resource)
+            return path_stack
 
-        def build(route, path):
+        def build(route, path_stack):
             result = []
 
             controller = route.get_controller_class()
             resource = controller.get_resource()
 
             if route.check_allow_methods(GET):
-                route_path = build_path(resource, path)
-                result.append((resource, controller, route_path))
+                route_path_stack = build_path(resource, path_stack)
+                result.append((resource, controller, route_path_stack))
 
             for name in filter(lambda x: route.is_route(x), dir(route)):
                 new_route = route.get_route(name)
-                if new_route.is_resource_route():
-                    new_path = build_path(resource, path)
-                    new_path = posixpath.join(new_path, name, '')
-                else:
-                    new_path = posixpath.join(path, name, '')
+                new_path = (build_path(resource, path_stack) if
+                            new_route.is_resource_route() else path_stack[:])
+                new_path.append(name)
                 result += build(route.get_route(name), new_path)
 
             return result
 
         class ResourceLocator(object):
 
-            def __init__(self, uri_template, controller):
-                self.uri_template = uri_template
+            def __init__(self, path_stack, controller):
+                self.path_stack = path_stack
                 self._controller = controller
 
+            def is_your_uri(self, uri):
+                uri_pieces = uri.split('/')[1:]
+                if len(uri_pieces) == len(self.path_stack):
+                    for piece1, piece2 in zip(uri_pieces, self.path_stack):
+                        if ((isinstance(piece2, basestring) and
+                                piece1 == piece2) or (
+                                not isinstance(piece2, basestring))):
+                            continue
+                        return False
+                    return True
+                else:
+                    return False
+
+            def get_parent_resource(self, parent_type, resource):
+                if hasattr(resource, 'get_parent_resource'):
+                    return resource.get_parent_resource()
+                res = [r for r in resource.values()
+                       if isinstance(r, parent_type)]
+                if len(res) > 1:
+                    raise TypeError("Can't change resource from %s. Please "
+                                    "indicate the parent resources" % str(res))
+                return res[0]
+
             def get_uri(self, resource):
-                param_name = '%s_uuid' % type(resource).__name__.lower()
-                return self.uri_template % {param_name: resource.get_id()}
+                path = resource.get_id()
+                for piece in reversed(self.path_stack[:-1]):
+                    if isinstance(piece, basestring):
+                        path = posixpath.join(piece, path)
+                    else:
+                        resource = self.get_parent_resource(piece, resource)
+                        path = posixpath.join(resource.get_id(), path)
+                # FIXME(Eugene Frolov): Header must be string. Not unicode.
+                return str(posixpath.join('/', path))
 
             def get_resource(self, request, uri):
                 uuid = posixpath.basename(uri)
@@ -163,8 +193,8 @@ class Route(BaseRoute):
 
         resource_map = {}
 
-        for res, controller, template in build(root_route, start_path):
-            resource_map[res] = ResourceLocator(template, controller)
+        for res, controller, stack in build(root_route, path_stack):
+            resource_map[res] = ResourceLocator(stack, controller)
 
         return resource_map
 

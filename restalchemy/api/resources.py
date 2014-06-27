@@ -16,8 +16,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import posixpath
-
 from restalchemy.common import exceptions as exc
 
 
@@ -32,9 +30,7 @@ class ResourceMap(object):
     @classmethod
     def get_locator(cls, uri):
         for resource, locator in cls.resource_map.items():
-            path_a = posixpath.dirname(uri)
-            path_b = posixpath.dirname(locator.uri_template)
-            if path_a == path_b:
+            if locator.is_your_uri(uri):
                 return locator
         raise exc.NotFoundError()
 
