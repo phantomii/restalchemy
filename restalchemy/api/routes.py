@@ -176,7 +176,7 @@ class Route(BaseRoute):
                 return res[0]
 
             def get_uri(self, resource):
-                path = resource.get_id()
+                path = str(resource.get_id())
                 for piece in reversed(self.path_stack[:-1]):
                     if isinstance(piece, basestring):
                         path = posixpath.join(piece, path)
