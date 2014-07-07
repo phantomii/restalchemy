@@ -138,6 +138,7 @@ class Route(BaseRoute):
                 result.append((resource, controller, route_path_stack))
 
             for name in filter(lambda x: route.is_route(x), dir(route)):
+                name = name.replace('_', '-')
                 new_route = route.get_route(name)
                 new_path = (build_path(resource, path_stack) if
                             new_route.is_resource_route() else path_stack[:])
