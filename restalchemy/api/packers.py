@@ -42,13 +42,14 @@ class BaseResourcePacker(object):
         if self._rt is not None and isinstance(obj, self._rt):
             result = {}
             for name, cls_prop in self._ps.search_all(
-                properties.AbstractProperty):
-                prop = obj.get_attr(name)
-                if prop.value is not None:
-                    result[name] = (resources.ResourceMap.get_location(
-                        prop.value) if isinstance(
-                            prop, relationships.BaseRelationship) else
-                        prop.value)
+                    properties.AbstractProperty):
+                if not name.startswith('_'):
+                    prop = obj.get_attr(name)
+                    if prop.value is not None:
+                        result[name] = (resources.ResourceMap.get_location(
+                            prop.value) if isinstance(
+                                prop, relationships.BaseRelationship) else
+                            prop.value)
             return result
         else:
             return obj
