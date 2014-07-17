@@ -46,9 +46,10 @@ class BaseResourcePacker(object):
                 if not name.startswith('_'):
                     prop = obj.get_attr(name)
                     if prop.value is not None:
-                        result[name] = (resources.ResourceMap.get_location(
-                            prop.value) if isinstance(
-                                prop, relationships.BaseRelationship) else
+                        result[name.replace('_', '-')] = (
+                            resources.ResourceMap.get_location(
+                                prop.value) if isinstance(
+                                    prop, relationships.BaseRelationship) else
                             prop.value)
             return result
         else:
@@ -63,9 +64,8 @@ class BaseResourcePacker(object):
     def unpack(self, obj):
         obj = copy.deepcopy(obj)
         result = {}
-
         for name, prop in self._ps.search_all(properties.AbstractProperty):
-            value = obj.pop(name, None)
+            value = obj.pop(name.replace('_', '-'), None)
             if value is not None:
                 result[name] = (resources.ResourceMap.get_resource(
                     self._req, value) if issubclass(
