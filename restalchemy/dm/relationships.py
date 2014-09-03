@@ -29,7 +29,10 @@ def relationship(*args, **kwargs):
         def __init__(self):
             self._read_only = kwargs.pop('read_only', False)
             self._required = kwargs.pop('required', False)
+            default = kwargs.pop('default', None)
             self._models = args
+            self._default = self._safe_value(default()) if callable(
+                default) else self._safe_value(default)
             self._value = None
 
         def _safe_value(self, value):
@@ -42,7 +45,7 @@ def relationship(*args, **kwargs):
 
         @property
         def value(self):
-            return self._value
+            return self._value or self._default
 
         @value.setter
         def value(self, value):
