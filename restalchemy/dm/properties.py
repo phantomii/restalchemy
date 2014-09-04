@@ -19,6 +19,7 @@
 import __builtin__
 import abc
 import collections
+import copy
 import inspect
 
 from restalchemy.common import exceptions as exc
@@ -208,9 +209,11 @@ def container(**kwargs):
 
     class Container(BaseContainer):
 
+        init_params = copy.deepcopy(kwargs)
+
         def __init__(self):
             self._ps = PropertySearcher(self)
-            for k, v in kwargs.items():
+            for k, v in self.init_params.items():
                 setattr(self, k, v())
 
         @__builtin__.property

@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
+
 from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties
 
@@ -26,7 +28,10 @@ def relationship(*args, **kwargs):
 
     class Relationship(BaseRelationship):
 
+        init_params = copy.deepcopy(kwargs)
+
         def __init__(self):
+            kwargs = copy.deepcopy(self.init_params)
             self._read_only = kwargs.pop('read_only', False)
             self._required = kwargs.pop('required', False)
             default = kwargs.pop('default', None)
