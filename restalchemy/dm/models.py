@@ -44,3 +44,8 @@ class ModelWithUUID(Model):
 
     def get_id(self):
         return self.uuid
+
+    def __eq__(self, other):
+        if isinstance(other, type(self)):
+            return self.get_id() == other.get_id()
+        return False
