@@ -19,6 +19,7 @@
 import abc
 import copy
 import re
+import uuid
 
 
 UUID_RE_TEMPLATE = "[a-f0-9]{8,8}-([a-f0-9]{4,4}-){3,3}[a-f0-9]{12,12}"
@@ -46,10 +47,13 @@ class BaseRegExpType(BaseType):
 
 
 # TODO(Eugene Frolov): Check uuid using UUID form uuid module
-class UUID(BaseRegExpType):
+class UUID(BaseType):
 
-    def __init__(self):
-        super(UUID, self).__init__(pattern="^%s$" % UUID_RE_TEMPLATE)
+    def validate(self, value):
+        try:
+            return bool(uuid.UUID(value))
+        except (TypeError, ValueError, AttributeError):
+            return False
 
 
 class Uri(BaseRegExpType):
