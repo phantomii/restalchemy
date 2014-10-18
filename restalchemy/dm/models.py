@@ -37,6 +37,12 @@ class Model(properties.PropertyBasedObject):
     def get_id(self):
         pass
 
+    def __str__(self):
+        return '<{module_}.{class_} {id_}>'.format(
+            module_=self.__class__.__module__,
+            class_=self.__class__.__name__,
+            id_=self.get_id())
+
 
 class ModelWithUUID(Model):
     uuid = properties.property(types.UUID, read_only=True,
