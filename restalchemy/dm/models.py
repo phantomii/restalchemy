@@ -38,10 +38,14 @@ class Model(properties.PropertyBasedObject):
         pass
 
     def __str__(self):
-        return '<{module_}.{class_} {id_}>'.format(
-            module_=self.__class__.__module__,
-            class_=self.__class__.__name__,
-            id_=self.get_id())
+        return '<%s %s>' % (self.__class__.__name__, self.get_id())
+
+    def __repr__(self):
+        result = []
+        for name in self:
+            result.append('%s: %s' % (name, getattr(self, name)))
+        result = ', '.join(result)
+        return '<%s {%s}>' % (self.__class__.__name__, result)
 
 
 class ModelWithUUID(Model):
