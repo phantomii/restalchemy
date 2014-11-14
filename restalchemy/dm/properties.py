@@ -68,7 +68,10 @@ def property(value_type, default=None, required=False, read_only=False):
 
         @__builtin__.property
         def value(self):
-            return self._value or self._default
+            if self._value is None:
+                return self._default
+            else:
+                return self._value
 
         @value.setter
         def value(self, value):
