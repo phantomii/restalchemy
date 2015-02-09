@@ -105,9 +105,18 @@ class PropertyBasedObjectTestCase(base.BaseTestCase):
     @mock.patch('restalchemy.dm.properties.PropertySearcher')
     def test_init(self, ps_mock):
         prop = [('fake_prop1', mock.Mock), ('fake_prop2', mock.Mock)]
+
+        def side_effect(attr, *property_type):
+            try:
+                if attr.__name__ == "validate":
+                    return False
+                return True
+            except Exception:
+                return True
+
         ps_mock.configure_mock(**{
             'return_value.search_all.return_value': prop,
-            'return_value.is_property.return_value': True})
+            'return_value.is_property.side_effect': side_effect})
         params = {
             'fake_prop1': 'fake_value1',
             'fake_prop2': 'fake_value2'}
@@ -128,7 +137,16 @@ class PropertyBasedObjectTestCase(base.BaseTestCase):
     def test__setattr__property(self, ps_mock):
 
         x_property = mock.Mock(name='x_property')
+
+        def side_effect(attr, *property_type):
+            try:
+                if attr.__name__ == "validate":
+                    return False
+                return True
+            except Exception:
+                return True
         ps_mock.configure_mock(**{
+            'return_value.is_property.side_effect': side_effect,
             'return_value.get_property.return_value': x_property})
 
         target = properties.PropertyBasedObject(properties.BaseProperty)

@@ -144,6 +144,7 @@ class PropertyBasedObject(collections.Mapping):
             if value:
                 prop.value = value
         super(PropertyBasedObject, self).__init__(**kwargs)
+        self.validate()
 
     @classmethod
     def restore(cls, *args, **kwargs):
@@ -202,6 +203,9 @@ class PropertyBasedObject(collections.Mapping):
 
     def __len__(self):
         return len(list(self._ps.search_all(*self._property_type)))
+
+    def validate(self):
+        pass
 
 
 class BaseContainer(BaseProperty):
