@@ -65,12 +65,13 @@ class BaseResourcePacker(object):
         obj = copy.deepcopy(obj)
         result = {}
         for name, prop in self._ps.search_all(properties.AbstractProperty):
-            value = obj.pop(name.replace('_', '-'), None)
-            if value is not None:
-                result[name] = (resources.ResourceMap.get_resource(
-                    self._req, value) if issubclass(
-                        prop, relationships.BaseRelationship)
-                    else value)
+            if not name.startswith('_'):
+                value = obj.pop(name.replace('_', '-'), None)
+                if value is not None:
+                    result[name] = (resources.ResourceMap.get_resource(
+                        self._req, value) if issubclass(
+                            prop, relationships.BaseRelationship)
+                        else value)
 
         if len(obj) > 0:
             raise TypeError("%s is not compatible with %s" % (obj, self._rt))
