@@ -101,6 +101,10 @@ class Route(BaseRoute):
             return False
 
     @classmethod
+    def get_routes(cls):
+        return filter(lambda x: cls.is_route(x), dir(cls))
+
+    @classmethod
     def check_allow_methods(cls, *args):
         for method in args:
             if method not in cls.__allow_methods__:
@@ -137,7 +141,7 @@ class Route(BaseRoute):
                 route_path_stack = build_path(resource, path_stack)
                 result.append((resource, controller, route_path_stack))
 
-            for name in filter(lambda x: route.is_route(x), dir(route)):
+            for name in route.get_routes():
                 name = name.replace('_', '-')
                 new_route = route.get_route(name)
                 new_path = (build_path(resource, path_stack) if
