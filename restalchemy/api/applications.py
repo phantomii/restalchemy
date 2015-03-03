@@ -33,9 +33,12 @@ class WSGIApp(object):
         resources.ResourceMap.set_resource_map(
             routes.Route.build_resource_map(route_class))
 
+    def process_request(self, req):
+        return self._main_route(req).do()
+
     @dec.wsgify
     def __call__(self, req):
-        return self._main_route(req).do()
+        return self.process_request(req)
 
 
 Application = WSGIApp
