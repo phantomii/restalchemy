@@ -21,6 +21,7 @@ import webob
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
+from restalchemy.dm import models
 
 
 class Controller(object):
@@ -29,9 +30,10 @@ class Controller(object):
     def __init__(self, request):
         self._req = request
 
-    def get_packer(self, content_type):
+    def get_packer(self, content_type, resource_type=None):
         packer = packers.get_packer(content_type)
-        return packer(self.get_resource(), request=self._req)
+        rt = resource_type or self.get_resource()
+        return packer(rt, request=self._req)
 
     def process_result(self, result, status_code=200, headers={},
                        add_location=False):
@@ -45,7 +47,9 @@ class Controller(object):
         def create_response(body, status, headers):
             if body is not None:
                 headers['Content-Type'] = packers.get_content_type(headers)
-                packer = self.get_packer(headers['Content-Type'])
+                rt = type(body) if isinstance(body, models.Model) else None
+                packer = self.get_packer(headers['Content-Type'],
+                                         resource_type=rt)
                 body = packer.pack(body)
 
             return webob.Response(
