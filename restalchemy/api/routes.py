@@ -181,13 +181,13 @@ class Route(BaseRoute):
                 return res[0]
 
             def get_uri(self, resource):
-                path = str(resource.get_id())
+                path = str(resource.get_resource_id())
                 for piece in reversed(self.path_stack[:-1]):
                     if isinstance(piece, basestring):
                         path = posixpath.join(piece, path)
                     else:
                         resource = self.get_parent_resource(piece, resource)
-                        path = posixpath.join(resource.get_id(), path)
+                        path = posixpath.join(resource.get_resource_id(), path)
                 # FIXME(Eugene Frolov): Header must be string. Not unicode.
                 return str(posixpath.join('/', path))
 
