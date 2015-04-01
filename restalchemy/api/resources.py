@@ -16,7 +16,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import abc
+
 from restalchemy.common import exceptions as exc
+from restalchemy.dm import properties
 
 
 class ResourceMap(object):
@@ -42,3 +45,32 @@ class ResourceMap(object):
     @classmethod
     def set_resource_map(cls, resource_map):
         cls.resource_map = resource_map
+
+
+class AbstractResource(object):
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def get_resource_id(self):
+        pass
+
+    @abc.abstractmethod
+    def get_fields(self):
+        pass
+
+
+class ResourceMixIn(AbstractResource):
+
+    _hidden_resource_fields = []
+
+    def get_resource_id(self):
+        return self.get_id()
+
+    @classmethod
+    def get_fields(cls):
+        ps = properties.PropertySearcher(cls)
+        for name, prop in ps.search_all(properties.AbstractProperty):
+            if ((name in cls._hidden_resource_fields) or
+                    name.startswith('_')):
+                continue
+            yield name, prop
