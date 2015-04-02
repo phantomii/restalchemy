@@ -43,8 +43,9 @@ class BaseResourcePacker(object):
             result = {}
             for name, cls_prop in obj.get_fields():
                 prop = obj.get_attr(name)
+                api_name = obj._name_fields_map.get(name, name)
                 if prop.value is not None:
-                    result[name.replace('_', '-')] = (
+                    result[api_name.replace('_', '-')] = (
                         resources.ResourceMap.get_location(
                             prop.value) if isinstance(
                                 prop, relationships.BaseRelationship) else
@@ -63,11 +64,13 @@ class BaseResourcePacker(object):
         obj = copy.deepcopy(obj)
         result = {}
         for name, prop in self._rt.get_fields():
-                value = obj.pop(name.replace('_', '-'), None)
+                api_name = self._rt._name_fields_map.get(name, name)
+                value = obj.pop(api_name.replace('_', '-'), None)
                 if value is not None:
-                    result[name] = (resources.ResourceMap.get_resource(
-                        self._req, value) if issubclass(
-                            prop, relationships.BaseRelationship)
+                    result[name] = (
+                        resources.ResourceMap.get_resource(
+                            self._req, value) if issubclass(
+                                prop, relationships.BaseRelationship)
                         else value)
 
         if len(obj) > 0:

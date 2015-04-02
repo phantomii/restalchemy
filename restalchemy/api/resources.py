@@ -62,6 +62,7 @@ class AbstractResource(object):
 class ResourceMixIn(AbstractResource):
 
     _hidden_resource_fields = []
+    _name_fields_map = {}
 
     def get_resource_id(self):
         return self.get_id()
