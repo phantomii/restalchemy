@@ -17,35 +17,110 @@
 #    under the License.
 
 import abc
+import collections
 import uuid
 
+from restalchemy.common import exceptions as exc
 from restalchemy.dm import properties
 from restalchemy.dm import types
 
+import six
 
-class Model(properties.PropertyBasedObject):
-    __metaclass__ = abc.ABCMeta
+
+class MetaModel(abc.ABCMeta):
+
+    def __new__(cls, name, bases, attrs):
+        props = {}
+        for key, value in attrs.copy().items():
+            if isinstance(value, (properties.PropertyCreator,
+                                  properties.PropertyCollection)):
+                props[key] = value
+                del attrs[key]
+        all_base_properties = properties.PropertyCollection()
+        for base in bases:
+            base_properties = getattr(base, 'properties', None)
+            if isinstance(base_properties, properties.PropertyCollection):
+                all_base_properties += base_properties
+        attrs['properties'] = (
+            attrs.pop('properties', properties.PropertyCollection()) +
+            properties.PropertyCollection(**props) + all_base_properties)
+        return super(MetaModel, cls).__new__(cls, name, bases, attrs)
+
+    def __getattr__(cls, name):
+        try:
+            return cls.properties[name]
+        except KeyError:
+            raise AttributeError("%s object has no attribute %s" % (
+                cls.__name__, name))
+
+
+@six.add_metaclass(MetaModel)
+class Model(collections.Mapping):
 
     def __init__(self, **kwargs):
-        super(Model, self).__init__(properties.AbstractProperty, **kwargs)
+        super(Model, self).__init__()
+        self.pour(**kwargs)
+
+    def __getattr__(self, name):
+        try:
+            return self.properties[name].value
+        except KeyError:
+            raise AttributeError("%s object has no attribute %s" % (
+                type(self).__name__, name))
+
+    def __setattr__(self, name, value):
+        try:
+            self.properties[name].value = value
+        except KeyError:
+            super(Model, self).__setattr__(name, value)
+        except exc.PropertyTypeError as e:
+            raise exc.ModelTypeError(
+                property_name=name,
+                value=value,
+                model=self,
+                property_type=e.get_property_type())
+        except exc.ReadOnlyProperty as e:
+            raise exc.ReadOnlyProperty(
+                name=name,
+                model=type(self)
+            )
+
+    def pour(self, **kwargs):
+        try:
+            self.properties = properties.PropertyManager(
+                self.properties,
+                **kwargs
+            )
+        except exc.PropertyRequired as e:
+            raise exc.PropertyRequired(
+                name=e.name,
+                model=self.__class__
+            )
 
     @classmethod
     def restore(cls, **kwargs):
-        return super(Model, cls).restore(properties.AbstractProperty, **kwargs)
+        obj = cls.__new__(cls)
 
-    @abc.abstractmethod
-    def get_id(self):
+        # NOTE(aostapenko) We can't invoke 'pour' from __new__ because of
+        # copy.copy of object becomes imposible
+        obj.pour(**kwargs)
+        return obj
+
+    def validate(self, value):
         pass
 
-    def __str__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.get_id())
+    def update(self, values):
+        for name, value in values.iteritems():
+            setattr(self, name, value)
 
-    def __repr__(self):
-        result = []
-        for name in self:
-            result.append('%s: %s' % (name, getattr(self, name)))
-        result = ', '.join(result)
-        return '<%s {%s}>' % (self.__class__.__name__, result)
+    def __getitem__(self, name):
+        return self.properties[name].value
+
+    def __iter__(self):
+        return six.iterkeys(self.properties)
+
+    def __len__(self):
+        return len(self.properties)
 
 
 class ModelWithUUID(Model):
@@ -56,6 +131,9 @@ class ModelWithUUID(Model):
         return self.uuid
 
     def __eq__(self, other):
-        if isinstance(other, type(self)):
+        if isinstance(other, self.__class__):
             return self.get_id() == other.get_id()
         return False
+
+    def __ne__(self, other):
+        return not self == other

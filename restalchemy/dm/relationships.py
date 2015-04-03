@@ -14,58 +14,60 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
-
 from restalchemy.common import exceptions as exc
+from restalchemy.dm import models
 from restalchemy.dm import properties
+
+
+def relationship(*args, **kwargs):
+    for arg in args:
+        if not issubclass(arg, models.Model):
+            raise exc.RelationshipModelError(model=arg)
+    kwargs['property_class'] = kwargs.get('property_class', Relationship)
+    return properties.property(*args, **kwargs)
 
 
 class BaseRelationship(properties.AbstractProperty):
     pass
 
 
-def relationship(*args, **kwargs):
+class Relationship(BaseRelationship):
 
-    class Relationship(BaseRelationship):
-
-        init_params = copy.deepcopy(kwargs)
-
-        def __init__(self):
-            kwargs = copy.deepcopy(self.init_params)
-            self._read_only = kwargs.pop('read_only', False)
-            self._required = kwargs.pop('required', False)
-            default = kwargs.pop('default', None)
-            self._models = args
-            self._default = self._safe_value(default()) if callable(
+    def __init__(self, property_types, default=None, required=False,
+                 read_only=False, value=None):
+        self._types = property_types
+        self._required = bool(required)
+        self._read_only = bool(read_only)
+        self._default = None
+        if default:
+            default = default() if callable(default) else default
+            self._default = (default()) if callable(
                 default) else self._safe_value(default)
-            self._value = None
+        self._value = value
 
-        def _safe_value(self, value):
-            if value is None or isinstance(value, self._models):
-                return value
-            raise exc.ValueError(class_name=self._models, value=value)
+    def _safe_value(self, value):
+        if value is None or isinstance(value, self._types):
+            if value is None and self.is_required():
+                raise exc.PropertyRequired()
+            return value
+        else:
+            raise exc.PropertyTypeError(value=value, property_type=self._type)
 
-        def restore_value(self, value):
-            self._value = self._safe_value(value)
+    def is_read_only(self):
+        return self._read_only
 
-        @property
-        def value(self):
-            return self._value or self._default
+    def is_required(self):
+        return self._required
 
-        @value.setter
-        def value(self, value):
-            if self.is_read_only():
-                raise exc.ReadOnlyPropertyError
-            self._value = self._safe_value(value)
+    @property
+    def value(self):
+        return self._value or self._default
 
-        def set_value_force(self, value):
-            self._value = self._safe_value(value)
+    @value.setter
+    def value(self, value):
+        if (self.is_read_only()):
+            raise exc.ReadOnlyProperty()
+        self._value = self._safe_value(value)
 
-        def is_read_only(self):
-            return self._read_only
-
-        def check(self):
-            if self._required and self.value is None:
-                raise exc.ValueRequiredError()
-
-    return Relationship
+    def set_value_force(self, value):
+        self._value = self._safe_value(value)

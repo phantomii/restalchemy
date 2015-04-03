@@ -19,7 +19,6 @@
 import abc
 
 from restalchemy.common import exceptions as exc
-from restalchemy.dm import properties
 
 
 class ResourceMap(object):
@@ -69,8 +68,7 @@ class ResourceMixIn(AbstractResource):
 
     @classmethod
     def get_fields(cls):
-        ps = properties.PropertySearcher(cls)
-        for name, prop in ps.search_all(properties.AbstractProperty):
+        for name, prop in cls.properties.iteritems():
             if ((name in cls._hidden_resource_fields) or
                     name.startswith('_')):
                 continue

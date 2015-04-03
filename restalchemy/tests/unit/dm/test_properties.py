@@ -18,137 +18,13 @@
 
 import mock
 
-from restalchemy.common import exceptions as exc
+from restalchemy.common import exceptions
 from restalchemy.dm import properties
 from restalchemy.tests.unit import base
 
-
-FAKE_VALUE = "fake value"
-
-
-class FakeClass(object):
-
-    fake_property1 = mock.Mock()
-    fake_property2 = mock.Mock()
-
-    def get_attr(self, name):
-        return getattr(self, name)
-
-
-class PropertySearcherTestCase(base.BaseTestCase):
-
-    def _prepare(self, target):
-        self.test_instance = properties.PropertySearcher(target)
-
-    def test_is_property_for_class_positive(self):
-        self._prepare(object())
-
-        self.assertTrue(self.test_instance.is_property(object, object))
-
-    def test_is_property_for_class_negative(self):
-        self._prepare(object())
-
-        self.assertFalse(self.test_instance.is_property(object, str))
-
-    def test_is_property_for_instance_positive(self):
-        self._prepare(object())
-
-        self.assertTrue(self.test_instance.is_property(object(), object))
-
-    def test_is_property_for_instance_negative(self):
-        self._prepare(object())
-
-        self.assertFalse(self.test_instance.is_property(object(), str))
-
-    @mock.patch.object(properties.PropertySearcher, "is_property",
-                       side_effect=[True, True, False])
-    def test_search_all_return_properties(self, is_property_mock):
-        self._prepare(FakeClass())
-
-        self.assertListEqual(list(self.test_instance.search_all(mock.Mock)),
-                             [('fake_property1', FakeClass.fake_property1),
-                              ('fake_property2', FakeClass.fake_property2)])
-        self.assertEqual(is_property_mock.call_count, 3)
-
-    @mock.patch.object(properties.PropertySearcher, "is_property",
-                       return_value=False)
-    def test_search_all_return_empty(self, is_property_mock):
-        self._prepare(FakeClass())
-
-        self.assertListEqual(list(self.test_instance.search_all(mock.Mock)),
-                             [])
-        self.assertEqual(is_property_mock.call_count, 3)
-
-    @mock.patch.object(properties.PropertySearcher, "is_property",
-                       return_value=True)
-    def test_get_roperty_positive(self, is_property_mock):
-        self._prepare(FakeClass())
-
-        self.assertEqual(
-            self.test_instance.get_property('fake_property1', object),
-            FakeClass.fake_property1)
-        is_property_mock.assert_called_one_with(
-            FakeClass.fake_property1, object)
-
-    @mock.patch.object(properties.PropertySearcher, "is_property",
-                       return_value=False)
-    def test_get_roperty_raise_property_not_found(self, is_property_mock):
-        self._prepare(FakeClass())
-
-        self.assertRaises(
-            exc.PropertyNotFoundError, self.test_instance.get_property,
-            'fake_property1', object)
-
-
-class PropertyBasedObjectTestCase(base.BaseTestCase):
-
-    @mock.patch('restalchemy.dm.properties.PropertySearcher')
-    def test_init(self, ps_mock):
-        prop = [('fake_prop1', mock.Mock), ('fake_prop2', mock.Mock)]
-        ps_mock.configure_mock(**{
-            'return_value.search_all.return_value': prop,
-            'return_value.is_property.return_value': True})
-        params = {
-            'fake_prop1': 'fake_value1',
-            'fake_prop2': 'fake_value2'}
-
-        target = properties.PropertyBasedObject(
-            properties.BaseProperty, **params)
-
-        self.assertIsInstance(target, properties.PropertyBasedObject)
-        self.assertEqual(target.fake_prop1, 'fake_value1')
-        self.assertEqual(target.fake_prop2, 'fake_value2')
-
-    def test_get_attr(self):
-        target = properties.PropertyBasedObject(properties.BaseProperty)
-
-        self.assertEqual(target.get_attr('get_attr'), target.get_attr)
-
-    @mock.patch('restalchemy.dm.properties.PropertySearcher')
-    def test__setattr__property(self, ps_mock):
-
-        x_property = mock.Mock(name='x_property')
-        ps_mock.configure_mock(**{
-            'return_value.get_property.return_value': x_property})
-
-        target = properties.PropertyBasedObject(properties.BaseProperty)
-
-        self.assertIsNone(setattr(target, 'test_property', 'test_value'))
-        self.assertEqual(x_property.value, 'test_value')
-
-    @mock.patch('restalchemy.dm.properties.PropertySearcher')
-    def test__setattr__value(self, ps_mock):
-
-        ps_mock.configure_mock(**{
-            'return_value.get_property.side_effect': (
-                exc.PropertyNotFoundError(class_name='test',
-                                          property_name='test')),
-            'return_value.is_property.return_value': False})
-
-        target = properties.PropertyBasedObject(properties.BaseProperty)
-
-        self.assertIsNone(setattr(target, 'test_property', 'test_value'))
-        self.assertEqual(target.test_property, 'test_value')
+FAKE_VALUE = 'FAKE_VALUE'
+FAKE_VALUE2 = 'FAKE_VALUE2'
+FAKE_VALUE3 = 'FAKE_VALUE3'
 
 
 class PropertyTestCase(base.BaseTestCase):
@@ -160,65 +36,298 @@ class PropertyTestCase(base.BaseTestCase):
         self.negative_fake_property_type = mock.MagicMock(
             **{'validate': mock.MagicMock(return_value=False)})
 
-    def test_default_value_incorect_raise_value_error(self):
-        property_obj = properties.property(self.negative_fake_property_type,
-                                           default=FAKE_VALUE)
-
-        self.assertRaises(exc.ValueError, property_obj)
-        self.negative_fake_property_type.validate.assert_called_with(
-            FAKE_VALUE)
-
     def _set_property_value(self, obj, value):
         obj.value = value
 
-    def test_set_corect_value(self):
-        property_obj = properties.property(self.positive_fake_property_type)()
+    def test_init_with_corect_value(self):
+        property_obj = properties.Property(
+            self.positive_fake_property_type, value=FAKE_VALUE)
 
-        self.assertIsNone(self._set_property_value(property_obj, FAKE_VALUE))
+        self.assertEqual(property_obj._value, FAKE_VALUE)
         self.positive_fake_property_type.validate.assert_called_with(
             FAKE_VALUE)
 
-    def test_set_none_value(self):
-        property_obj = properties.property(self.negative_fake_property_type)()
+    def test_init_incorect_value(self):
+        self.assertRaises(exceptions.TypeError, properties.Property,
+                          self.negative_fake_property_type, value=FAKE_VALUE)
 
-        self.assertIsNone(self._set_property_value(property_obj, None))
+    def test_init_default_value(self):
+        property_obj = properties.Property(
+            self.positive_fake_property_type, default=FAKE_VALUE)
+
+        self.assertEqual(property_obj._value, FAKE_VALUE)
+        self.positive_fake_property_type.validate.assert_called_with(
+            FAKE_VALUE)
+
+    def test_init_default_callable_value(self):
+        property_obj = properties.Property(
+            self.positive_fake_property_type, default=lambda: FAKE_VALUE)
+
+        self.assertEqual(property_obj.value, FAKE_VALUE)
+        self.positive_fake_property_type.validate.assert_called_with(
+            FAKE_VALUE)
+
+    def test_init_default_value_if_property_read_only(self):
+        property_obj = properties.Property(
+            self.positive_fake_property_type, default=FAKE_VALUE,
+            read_only=True)
+
+        self.assertEqual(property_obj._value, FAKE_VALUE)
+        self.positive_fake_property_type.validate.assert_called_with(
+            FAKE_VALUE)
+
+    def test_init_none_and_require(self):
+        self.assertRaises(exceptions.PropertyRequired, properties.Property,
+                          self.negative_fake_property_type, required=True,
+                          value=None)
+
+    def test_init_value_is_none_default_is_not_none_and_prop_required(self):
+        property_obj = properties.Property(
+            self.positive_fake_property_type, value=None, required=True,
+            default=FAKE_VALUE)
+
+        self.assertEqual(property_obj._value, FAKE_VALUE)
+        self.positive_fake_property_type.validate.assert_called_with(
+            FAKE_VALUE)
+
+    def test_init_none_value(self):
+        property_obj = properties.Property(
+            self.negative_fake_property_type, value=None)
+
+        self.assertEqual(property_obj._value, None)
+
+    def test_init_value_with_read_only(self):
+        property_obj = properties.Property(
+            self.positive_fake_property_type, read_only=True,
+            value=FAKE_VALUE2)
+
+        self.assertEqual(property_obj._value, FAKE_VALUE2)
+        self.positive_fake_property_type.validate.assert_called_with(
+            FAKE_VALUE2)
+
+    def test_set_correct_value(self):
+        property_obj = properties.Property(self.positive_fake_property_type)
+
+        self.assertIsNone(self._set_property_value(property_obj, FAKE_VALUE))
+        self.assertEqual(property_obj._value, FAKE_VALUE)
+        self.positive_fake_property_type.validate.assert_called_with(
+            FAKE_VALUE)
 
     def test_set_incorect_value(self):
-        property_obj = properties.property(self.negative_fake_property_type)()
+        property_obj = properties.Property(self.negative_fake_property_type)
+        old_value = property_obj._value
 
-        self.assertRaises(exc.ValueError, self._set_property_value,
+        self.assertRaises(exceptions.TypeError, self._set_property_value,
                           property_obj, FAKE_VALUE)
+        self.assertEqual(property_obj._value, old_value)
         self.negative_fake_property_type.validate.assert_called_with(
             FAKE_VALUE)
 
-    def test_default_return_value(self):
-        property_obj = properties.property(self.positive_fake_property_type,
-                                           default=FAKE_VALUE)()
+    def test_set_value_if_property_read_only(self):
+        property_obj = properties.Property(
+            self.positive_fake_property_type, read_only=True)
 
-        self.assertEqual(property_obj.value, FAKE_VALUE)
+        self.assertRaises(exceptions.ReadOnlyProperty,
+                          self._set_property_value, property_obj, FAKE_VALUE2)
+        self.assertEqual(property_obj._value, None)
 
-    def test_check_pass_if_value_is_required(self):
-        property_obj = properties.property(self.positive_fake_property_type,
-                                           required=True)()
-        property_obj.value = FAKE_VALUE
+    def test_set_force_correct_value(self):
+        property_obj = properties.Property(self.positive_fake_property_type)
 
-        self.assertEqual(property_obj.check(), None)
+        self.assertIsNone(property_obj.set_value_force(FAKE_VALUE))
+        self.assertEqual(property_obj._value, FAKE_VALUE)
+        self.positive_fake_property_type.validate.assert_called_with(
+            FAKE_VALUE)
 
-    def test_check_pass_if_value_is_required_and_default_is_set(self):
-        property_obj = properties.property(self.positive_fake_property_type,
-                                           required=True,
-                                           default=FAKE_VALUE)()
+    def test_set_force_incorect_value(self):
+        property_obj = properties.Property(self.negative_fake_property_type)
+        old_value = property_obj._value
 
-        self.assertEqual(property_obj.check(), None)
+        self.assertRaises(exceptions.TypeError, property_obj.set_value_force,
+                          FAKE_VALUE)
+        self.assertEqual(property_obj._value, old_value)
+        self.negative_fake_property_type.validate.assert_called_with(
+            FAKE_VALUE)
 
-    def test_check_pass_if_value_is_not_required(self):
-        property_obj = properties.property(self.positive_fake_property_type,
-                                           required=False)()
+    def test_set_force_none_value(self):
+        property_obj = properties.Property(self.positive_fake_property_type,
+                                           required=True, value=FAKE_VALUE)
+        old_value = property_obj._value
 
-        self.assertEqual(property_obj.check(), None)
+        self.assertRaises(exceptions.PropertyRequired,
+                          property_obj.set_value_force, None)
+        self.assertEqual(property_obj._value, old_value)
 
-    def test_check_raise_if_value_is_required(self):
-        property_obj = properties.property(self.positive_fake_property_type,
-                                           required=True)()
 
-        self.assertRaises(exc.ValueRequiredError, property_obj.check)
+class PropertyCreatorTestCase(base.BaseTestCase):
+
+    ARGS = [1, 2, 3]
+    KWARGS = {'fake_key1': 'fake_value1', 'fake_key2': 'fake_value2'}
+
+    def setUp(self):
+        self.property_mock = mock.Mock(return_value=FAKE_VALUE)
+        self.test_instance = properties.PropertyCreator(self.property_mock,
+                                                        self.ARGS, self.KWARGS)
+
+    def test_call_object(self):
+        self.assertEqual(self.test_instance(FAKE_VALUE2), FAKE_VALUE)
+        self.property_mock.assert_called_once_with(value=FAKE_VALUE2,
+                                                   *self.ARGS, **self.KWARGS)
+
+    def test_get_property_class(self):
+        self.assertEqual(self.test_instance.get_property_class(),
+                         self.property_mock)
+
+
+class PropertyCollectionTestCase(base.BaseTestCase):
+
+    def setUp(self):
+
+        self.kwargs = {
+            'fake1': mock.Mock(
+                **{'get_property_class.return_value': FAKE_VALUE,
+                   'return_value': FAKE_VALUE2}),
+            'fake2': mock.Mock(
+                **{'get_property_class.return_value': FAKE_VALUE2,
+                   'return_value': FAKE_VALUE})
+        }
+        self.test_instance = properties.PropertyCollection(**self.kwargs)
+
+    def test_properties(self):
+        self.assertEqual(self.test_instance.properties, self.kwargs)
+
+    def test_change_properties_dict(self):
+        def set_item(d, key, value):
+            d[key] = value
+
+        self.assertRaises(TypeError, set_item, self.test_instance.properties,
+                          'fake1', 2)
+
+    def test_get_item_fake1(self):
+        self.assertEqual(self.test_instance['fake1'], FAKE_VALUE)
+        self.assertTrue(self.kwargs['fake1'].get_property_class.called)
+        self.assertFalse(self.kwargs['fake2'].get_property_class.called)
+
+    def test_get_item_fake2(self):
+        self.assertEqual(self.test_instance['fake2'], FAKE_VALUE2)
+        self.assertFalse(self.kwargs['fake1'].get_property_class.called)
+        self.assertTrue(self.kwargs['fake2'].get_property_class.called)
+
+    def test_instantiate_property_fake1(self):
+        self.assertEqual(self.test_instance.instantiate_property(
+            name='fake1', value=FAKE_VALUE3), FAKE_VALUE2)
+        self.kwargs['fake1'].assert_called_once_with(FAKE_VALUE3)
+        self.assertFalse(self.kwargs['fake2'].called)
+
+    def test_instantiate_property_fake2(self):
+        self.assertEqual(self.test_instance.instantiate_property(
+            name='fake2', value=FAKE_VALUE3), FAKE_VALUE)
+        self.kwargs['fake2'].assert_called_once_with(FAKE_VALUE3)
+        self.assertFalse(self.kwargs['fake1'].called)
+
+    def test_concatenate_two_collections(self):
+        fake_property3 = mock.Mock()
+        test_instance2 = properties.PropertyCollection(fake3=fake_property3)
+        new_properties = self.kwargs
+        new_properties['fake3'] = fake_property3
+
+        res = self.test_instance + test_instance2
+        self.assertIsInstance(res, properties.PropertyCollection)
+        self.assertNotEqual(res, self.test_instance)
+        self.assertNotEqual(res, test_instance2)
+        self.assertEqual(res._properties, new_properties)
+
+    def test_concatenate_collection_and_other_object(self):
+
+        def concatenate(a, b):
+            return a + b
+
+        self.assertRaises(TypeError, concatenate, self.test_instance, object())
+
+
+class PropertyManagerTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        self.collection_mock = mock.Mock(**{
+            'properties.iteritems.return_value': [
+                ('fake1', 'fake1'),
+                ('fake2', 'fake2')
+            ],
+            'instantiate_property.return_value': FAKE_VALUE})
+
+    def test_init_manager(self):
+        res = properties.PropertyManager(self.collection_mock)
+        instantiate_property_calls = [
+            mock.call('fake1', None),
+            mock.call('fake2', None)]
+
+        self.assertIsInstance(res, properties.PropertyManager)
+        self.collection_mock.instantiate_property.assert_has_calls(
+            instantiate_property_calls, any_order=True)
+
+    def test_init_manager_with_correct_kwargs(self):
+        res = properties.PropertyManager(self.collection_mock,
+                                         fake1=FAKE_VALUE2,
+                                         fake2=FAKE_VALUE3)
+        instantiate_property_calls = [
+            mock.call('fake1', FAKE_VALUE2),
+            mock.call('fake2', FAKE_VALUE3)]
+
+        self.assertIsInstance(res, properties.PropertyManager)
+        self.collection_mock.instantiate_property.assert_has_calls(
+            instantiate_property_calls, any_order=True)
+
+    @base.unittest.skip("Checking of redundant data is turned off.")
+    def test_init_manager_with_incorrect_kwargs(self):
+        self.assertRaises(TypeError, properties.PropertyManager,
+                          self.collection_mock, fake3=FAKE_VALUE3)
+
+    def test_properties(self):
+        property_manager = properties.PropertyManager(self.collection_mock)
+
+        self.assertEqual(property_manager.properties, {'fake1': 'FAKE_VALUE',
+                                                       'fake2': 'FAKE_VALUE'})
+
+    def test_change_properties_dict(self):
+        property_manager = properties.PropertyManager(self.collection_mock)
+
+        def set_item(d, key, value):
+            d[key] = value
+
+        self.assertRaises(TypeError, set_item, property_manager.properties,
+                          'fake1', 2)
+
+
+@mock.patch('restalchemy.dm.properties.PropertyCreator',
+            return_value=FAKE_VALUE)
+class PropertyFuncTestCase(base.BaseTestCase):
+
+    ARGS = (1, 2, 3)
+    KWARGS = {'fake_key1': 'fake_value1', 'fake_key2': 'fake_value2'}
+
+    def test_create_property(self, pc_mock):
+        self.assertEqual(properties.property(*self.ARGS, **self.KWARGS),
+                         FAKE_VALUE)
+        pc_mock.assert_called_once_with(
+            properties.Property, args=self.ARGS, kwargs=self.KWARGS)
+
+    def test_create_property_with_property_class(self, pc_mock):
+
+        class LocalProperty(properties.AbstractProperty):
+
+            @property
+            def value(self):
+                pass
+
+            def set_value_force(self, value):
+                pass
+
+        self.assertEqual(properties.property(
+            property_class=LocalProperty, *self.ARGS, **self.KWARGS),
+            FAKE_VALUE)
+        pc_mock.assert_called_once_with(
+            LocalProperty, args=self.ARGS, kwargs=self.KWARGS)
+
+    def test_create_property_with_incorect_property_class(self, pc_mock):
+        self.assertRaises(ValueError, properties.property,
+                          property_class=object, *self.ARGS, **self.KWARGS)

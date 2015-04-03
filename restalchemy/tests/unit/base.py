@@ -16,7 +16,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import unittest
+import sys
+
+if sys.version_info[:2] >= (2, 7):
+    import unittest
+else:
+    import unittest2 as unittest
 
 
 class BaseTestCase(unittest.TestCase):

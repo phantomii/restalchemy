@@ -20,7 +20,6 @@ import anyjson
 import copy
 
 from restalchemy.api import resources
-from restalchemy.dm import properties
 from restalchemy.dm import relationships
 
 
@@ -34,15 +33,14 @@ def get_content_type(headers):
 class BaseResourcePacker(object):
 
     def __init__(self, resource_type, request):
-        self._ps = properties.PropertySearcher(resource_type)
         self._rt = resource_type
         self._req = request
 
     def pack_resource(self, obj):
         if self._rt is not None and isinstance(obj, self._rt):
             result = {}
-            for name, cls_prop in obj.get_fields():
-                prop = obj.get_attr(name)
+            for name, cls_prop in self._rt.get_fields():
+                prop = obj.properties.get(name)
                 api_name = obj._name_fields_map.get(name, name)
                 if prop.value is not None:
                     result[api_name.replace('_', '-')] = (

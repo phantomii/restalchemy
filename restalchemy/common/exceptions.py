@@ -36,18 +36,6 @@ class RestAlchemyException(Exception):
         return "Code: %s, Message: %s" % (self.code, self.msg)
 
 
-class ValueError(RestAlchemyException):
-
-    message = "Invalid value for %(class_name)s with base: %(value)s"
-    code = 400
-
-
-class ValueRequiredError(RestAlchemyException):
-
-    message = "Value is required"
-    code = 400
-
-
 class PropertyNotFoundError(RestAlchemyException):
 
     message = "'%(class_name)s' object has no property '%(property_name)s'"
@@ -66,14 +54,59 @@ class NotFoundError(RestAlchemyException):
     code = 400
 
 
-# TODO(Eugene Frolov): TBD
-class ReadOnlyPropertyError(RestAlchemyException):
+class PropertyException(RestAlchemyException, ValueError):
 
-    message = "One can't change a read only property"
-    code = 400
+    def __init__(self, name=None, model=None):
+        self.name = name or 'Unknown'
+        self.model = model or 'Unknown'
+        super(PropertyException, self).__init__(
+            name=self.name,
+            model=self.model
+        )
 
 
-class TypeError(RestAlchemyException):
+class PropertyRequired(PropertyException):
 
-    message = "Cannot %(action)s '%(t1)s' and '%(t2)s' objects"
-    code = 400
+    message = ("Value for property '%(name)s' for model %(model)s "
+               "is required! Property should not be None value.")
+
+
+class ReadOnlyProperty(PropertyException):
+
+    message = ("Property '%(name)s' of model %(model)s is read only!")
+
+
+class TypeError(RestAlchemyException, TypeError):
+
+    message = "Invalid type value '%(value)s' for '%(property_type)s'"
+
+    def __init__(self, value, property_type):
+        self._value = value
+        self._property_type = property_type
+        super(TypeError, self).__init__(
+            value=value, property_type=type(property_type).__name__)
+
+    def get_value(self):
+        return self._value
+
+    def get_property_type(self):
+        return self._property_type
+
+
+class ModelTypeError(TypeError):
+
+    message = ("Invalid type value '%(value)s'(%(value_type)s) for "
+               "'%(model_name)s.%(property_name)s'(%(property_type)s)")
+
+    def __init__(self, value, property_name, property_type, model):
+        super(TypeError, self).__init__(
+            value=value, value_type=type(value),
+            property_type=type(property_type).__name__,
+            model_name=type(model).__name__,
+            property_name=property_name)
+
+
+class RelationshipModelError(RestAlchemyException):
+
+    message = ("Invalid model %(model)s for relationship. Must be inherited "
+               "from dm.core.models.Model")

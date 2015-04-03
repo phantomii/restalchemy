@@ -21,52 +21,27 @@ import copy
 import re
 import uuid
 
+import six
 
+
+INFINITI = float("inf")
 UUID_RE_TEMPLATE = "[a-f0-9]{8,8}-([a-f0-9]{4,4}-){3,3}[a-f0-9]{12,12}"
 
 
+@six.add_metaclass(abc.ABCMeta)
 class BaseType(object):
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def validate(self, value):
         pass
 
+    @abc.abstractmethod
+    def to_simple_type(self, value):
+        pass
 
-class BaseRegExpType(BaseType):
-
-    def __init__(self, pattern):
-        super(BaseType, self).__init__()
-        self._pattern = re.compile(pattern)
-
-    def validate(self, value):
-        try:
-            return self._pattern.match(value) is not None
-        except TypeError:
-            return False
-
-
-# TODO(Eugene Frolov): Check uuid using UUID form uuid module
-class UUID(BaseType):
-
-    def validate(self, value):
-        try:
-            return bool(uuid.UUID(value))
-        except (TypeError, ValueError, AttributeError):
-            return False
-
-
-class Uri(BaseRegExpType):
-
-    def __init__(self):
-        super(Uri, self).__init__(pattern="^(/[A-Za-z0-9\-_]*)*/%s$" %
-                                  UUID_RE_TEMPLATE)
-
-
-class Mac(BaseRegExpType):
-
-    def __init__(self):
-        super(Mac, self).__init__("^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$")
+    @abc.abstractmethod
+    def from_simple_type(self, value):
+        pass
 
 
 class BasePythonType(BaseType):
@@ -78,12 +53,17 @@ class BasePythonType(BaseType):
     def validate(self, value):
         return isinstance(value, self._python_type)
 
+    def to_simple_type(self, value):
+        return value
+
+    def from_simple_type(self, value):
+        return value
+
 
 class String(BasePythonType):
 
-    #TODO(Eugene Frolov): Make possible to create "infinite" value
-    def __init__(self, min_length=0, max_length=255):
-        super(String, self).__init__(basestring)
+    def __init__(self, min_length=0, max_length=six.MAXSIZE):
+        super(String, self).__init__(six.string_types)
         self.min_length = int(min_length)
         self.max_length = int(max_length)
 
@@ -95,15 +75,30 @@ class String(BasePythonType):
 
 class Integer(BasePythonType):
 
-    #TODO(Eugene Frolov): Make possible to create "infinite" value
-    def __init__(self, min_value=0, max_value=65535):
-        super(Integer, self).__init__(int)
-        self.min_value = int(min_value)
-        self.max_value = int(max_value)
+    def __init__(self, min_value=-INFINITI, max_value=INFINITI):
+        super(Integer, self).__init__(six.integer_types)
+        self.min_value = (
+            min_value if min_value == -INFINITI else int(min_value))
+        self.max_value = max_value if max_value == INFINITI else int(max_value)
 
     def validate(self, value):
         result = super(Integer, self).validate(value)
         return result and value >= self.min_value and value <= self.max_value
+
+
+class UUID(BaseType):
+
+    def to_simple_type(self, value):
+        return str(value)
+
+    def from_simple_type(self, value):
+        return uuid.UUID(value)
+
+    def validate(self, value):
+        try:
+            return bool(uuid.UUID(value))
+        except (TypeError, ValueError, AttributeError):
+            return False
 
 
 class Dict(BasePythonType):
@@ -120,3 +115,41 @@ class Enum(BaseType):
 
     def validate(self, value):
         return value in self._enums_values
+
+    def to_simple_type(self, value):
+        return self._enums_values
+
+    def from_simple_type(self, value):
+        return self._enums_values
+
+
+class BaseRegExpType(BaseType):
+
+    def __init__(self, pattern):
+        super(BaseType, self).__init__()
+        self._pattern = re.compile(pattern)
+
+    def validate(self, value):
+        try:
+            return self._pattern.match(value) is not None
+        except TypeError:
+            return False
+
+    def to_simple_type(self, value):
+        return value
+
+    def from_simple_type(self, value):
+        return value
+
+
+class Uri(BaseRegExpType):
+
+    def __init__(self):
+        super(Uri, self).__init__(pattern="^(/[A-Za-z0-9\-_]*)*/%s$" %
+                                  UUID_RE_TEMPLATE)
+
+
+class Mac(BaseRegExpType):
+
+    def __init__(self):
+        super(Mac, self).__init__("^([0-9a-fA-F]{2,2}:){5,5}[0-9a-fA-F]{2,2}$")
