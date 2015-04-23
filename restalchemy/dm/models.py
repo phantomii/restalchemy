@@ -122,6 +122,17 @@ class Model(collections.Mapping):
     def __len__(self):
         return len(self.properties)
 
+    def __str__(self):
+        return '<%s %s>' % (self.__class__.__name__,
+                            self.get_id())
+
+    def __repr__(self):
+        result = []
+        for k, v in self.iteritems():
+            result.append('%s: %s' % (k, v))
+        result = ', '.join(result)
+        return '<%s {%s}>' % (self.__class__.__name__, result)
+
 
 class ModelWithUUID(Model):
     uuid = properties.property(types.UUID, read_only=True,
