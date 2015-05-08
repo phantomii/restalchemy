@@ -58,7 +58,7 @@ class BaseRoute(object):
         return cls.__allow_methods__
 
     @abc.abstractmethod
-    def do(self):
+    def do(self, **kwargs):
         pass
 
 
@@ -203,8 +203,8 @@ class Route(BaseRoute):
 
         return resource_map
 
-    def do(self, parent_resource=None):
-        super(Route, self).do()
+    def do(self, parent_resource=None, **kwargs):
+        super(Route, self).do(**kwargs)
 
         # TODO(Eugene Frolov): Check the possibility to pass to the method
         #                      specified in a route.
@@ -243,7 +243,7 @@ class Route(BaseRoute):
             action_name = self._req.path_info_peek()
             action = self.get_action(action_name)
             worker = action(self._req)
-            return worker.do(resource=resource)
+            return worker.do(resource=resource, **self._req.params)
 
         elif (name != '' and path is not None):
             # Intermediate resource route
@@ -284,8 +284,8 @@ class Action(BaseRoute):
     def is_invoke(self):
         return False
 
-    def do(self, resource):
-        super(Action, self).do()
+    def do(self, resource, **kwargs):
+        super(Action, self).do(**kwargs)
 
         method = self._req.method
         action_name = self._req.path_info_pop().replace("-", "_")
@@ -302,7 +302,8 @@ class Action(BaseRoute):
         if ((method in [GET, POST, PUT] and self.is_invoke() and invoke) or
             (method == GET and not self.is_invoke() and not invoke)):
             action_method = getattr(action, 'do_%s' % method.lower())
-            return action_method(controller=controller, resource=resource)
+            return action_method(controller=controller, resource=resource,
+                                 **kwargs)
         else:
             # TODO(Eugene Frolov): Specify exception type and message
             raise
