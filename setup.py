@@ -18,5 +18,5 @@ import setuptools
 
 
 setuptools.setup(
-    setup_requires=['pbr'],
+    setup_requires=['pbr==0.8.2'],
     pbr=True)

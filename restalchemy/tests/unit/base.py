@@ -16,13 +16,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import random
-import string
-import unittest
+import sys
+
+if sys.version_info[:2] >= (2, 7):
+    import unittest
+else:
+    import unittest2 as unittest
 
 
 class BaseTestCase(unittest.TestCase):
 
-    def string_generator(self, size=6, chars=string.ascii_uppercase +
-                         string.digits):
-        return ''.join(random.choice(chars) for _ in range(size))
+    FAKE_STRING = 'FakeString'
+
+    def string_generator(self, size=6):
+        return (self.FAKE_STRING * (size / len(self.FAKE_STRING) + 1))[:size]

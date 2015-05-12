@@ -16,20 +16,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import abc
 
-from restalchemy.common import exceptions as exc
-
-
-class AbstractProperty(object):
-
-    @abc.abstractmethod
-    def value(self):
-        pass
-
-    def is_read_only(self):
-        return self._read_only
-
-    def check(self):
-        if self._required and self.value == None:
-            raise exc.ValueRequiredError()
+class Context(object):
+    pass
