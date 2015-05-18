@@ -37,9 +37,9 @@ class BaseResourcePacker(object):
         self._req = request
 
     def pack_resource(self, obj):
-        if self._rt is not None and isinstance(obj, self._rt):
+        if isinstance(obj, resources.ResourceMixIn):
             result = {}
-            for name, cls_prop in self._rt.get_fields():
+            for name, cls_prop in obj.get_fields():
                 prop = obj.properties.get(name)
                 api_name = obj._name_fields_map.get(name, name)
                 if prop.value is not None:
