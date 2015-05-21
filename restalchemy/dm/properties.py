@@ -158,9 +158,8 @@ class PropertyManager(PropertyMapping):
                     raise exc.PropertyRequired(name=name)
             self._properties[name] = prop
 
-        # commented because kwargs can contain 'context' etc. Figure out
-#        if len(kwargs) > 0:
-#            raise TypeError("Unknown parameters: %s" % str(kwargs))
+        if len(kwargs) > 0:
+            raise TypeError("Unknown parameters: %s" % str(kwargs))
         super(PropertyManager, self).__init__()
 
     @__builtin__.property
