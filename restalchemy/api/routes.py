@@ -79,10 +79,10 @@ class Route(BaseRoute):
         try:
             attr = getattr(cls, name.replace('-', '_'))
             if not (inspect.isclass(attr) and issubclass(attr, the_class)):
-                raise exc.NotFoundError()
+                raise exc.IncorrectRouteAttributeClass(route=attr)
             return attr
         except AttributeError:
-            raise exc.NotFoundError()
+            raise exc.IncorrectRouteAttribute(route=cls, attr=name)
 
     @classmethod
     def get_route(cls, name):
@@ -97,7 +97,7 @@ class Route(BaseRoute):
         try:
             cls.get_route(name)
             return True
-        except exc.NotFoundError:
+        except (exc.IncorrectRouteAttributeClass, exc.IncorrectRouteAttribute):
             return False
 
     @classmethod
@@ -119,8 +119,7 @@ class Route(BaseRoute):
         try:
             return mapping[self._req.method]
         except KeyError:
-            # TODO(Eugene Frolov): Specify error type and message.
-            raise exc.NotFoundError()
+            raise exc.UnsupportedHttpMethod(method=self._req.method)
 
     @classmethod
     def build_resource_map(cls, root_route, path_stack=None):
@@ -225,13 +224,14 @@ class Route(BaseRoute):
                 # Resource method
                 return worker.do_resource(name, parent_resource)
             else:
-                raise exc.NotFoundError()
+                raise exc.UnsupportedMethod(method=ctrl_method,
+                                            object_name=name)
 
         elif (name != '' and path is not None and self.is_route(name)):
             # Next route
             route = self.get_route(name)
             if route.is_resource_route():
-                raise exc.NotFoundError()
+                raise exc.ResourceNotFoundError(resource=name, path=path)
             worker = route(self._req)
             return worker.do(parent_resource)
 
@@ -253,13 +253,13 @@ class Route(BaseRoute):
             name, path = self._req.path_info_pop(), self._req.path_info_peek()
             route = self.get_route(name)
             if route.is_collection_route():
-                raise exc.NotFoundError()
+                raise exc.CollectionNotFoundError(collection=name, path=path)
             worker = route(self._req)
             return worker.do(parent_resource)
 
         else:
             # Other
-            raise exc.NotFoundError()
+            raise exc.NotFoundError(path=path)
 
 
 def route(route_class, resource_route=False):
@@ -295,18 +295,17 @@ class Action(BaseRoute):
         elif invoke_info is None:
             invoke = False
         else:
-            # TODO(Eugene Frolov): Specify exception and exception message
-            raise exc.NotFoundError()
+            raise exc.UnsupportedMethod(method=invoke_info,
+                                        object_name=action_name)
         controller = self.get_controller(self._req)
         action = getattr(controller, action_name)
         if ((method in [GET, POST, PUT] and self.is_invoke() and invoke) or
-            (method == GET and not self.is_invoke() and not invoke)):
+           (method == GET and not self.is_invoke() and not invoke)):
             action_method = getattr(action, 'do_%s' % method.lower())
             return action_method(controller=controller, resource=resource,
                                  **kwargs)
         else:
-            # TODO(Eugene Frolov): Specify exception type and message
-            raise
+            raise exc.IncorrectActionCall(action=action, method=method)
 
 
 def action(action_class, invoke=False):

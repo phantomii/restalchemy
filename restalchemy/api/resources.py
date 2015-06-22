@@ -34,7 +34,7 @@ class ResourceMap(object):
         for resource, locator in cls.resource_map.items():
             if locator.is_your_uri(uri):
                 return locator
-        raise exc.NotFoundError()
+        raise exc.LocatorNotFound(uri=uri)
 
     @classmethod
     def get_resource(cls, request, uri):

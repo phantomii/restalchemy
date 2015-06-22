@@ -26,7 +26,7 @@ class RestAlchemyException(Exception):
     """
 
     message = "An unknown exception occurred."
-    code = 0
+    code = 500
 
     def __init__(self, **kwargs):
         self.msg = self.message % kwargs
@@ -48,9 +48,54 @@ class NotImplementedError(RestAlchemyException):
     code = 400
 
 
+class UnsupportedHttpMethod(RestAlchemyException):
+    message = "HTTP method '%(method)s' is not supported."
+    code = 405
+
+
+class UnsupportedMethod(RestAlchemyException):
+    message = "Method '%(method)s' is not supported " \
+              "for %(object_name)s"
+    code = 405
+
+
+class LocatorNotFound(RestAlchemyException):
+    message = ("Locator is not found for URI %(uri)s. "
+               "Thus resource could not be found. ")
+    code = 404
+
+
+class IncorrectRouteAttributeClass(RestAlchemyException):
+    message = "Route %(route)s is of unacceptable class"
+    code = 400
+
+
+class IncorrectRouteAttribute(RestAlchemyException):
+    message = "Route %(route)s doesn't have method %(attr)s"
+    code = 400
+
+
+class IncorrectActionCall(RestAlchemyException):
+    message = "Action %(action)s is incorrectly called with HTTP method %(" \
+              "method)s"
+    code = 400
+
+
+class ResourceNotFoundError(RestAlchemyException):
+
+    message = "Resource '%(resource)s' is not found on path: %(path)s"
+    code = 404
+
+
+class CollectionNotFoundError(RestAlchemyException):
+
+    message = "Collection '%(collection)s' is not found on path: %(path)s"
+    code = 404
+
+
 class NotFoundError(RestAlchemyException):
 
-    message = "Not Found"
+    message = "Nothing is found on path '%(path)s'"
     code = 400
 
 

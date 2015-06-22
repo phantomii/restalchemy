@@ -84,8 +84,7 @@ class Controller(object):
             return self.process_result(self.create(**kwargs), 201,
                                        add_location=True)
         else:
-            # TODO(Eugene Frolov): Specify exception code and message
-            raise exc.NotFoundError()
+            raise exc.UnsupportedHttpMethod(method=method)
 
     def get_resource_by_uuid(self, uuid, parent_resource=None):
         kwargs = self._make_kwargs(parent_resource)
@@ -109,8 +108,7 @@ class Controller(object):
             result = self.delete(uuid=uuid, **kwargs)
             return self.process_result(result, 200 if result else 204)
         else:
-            # TODO(Eugene Frolov): Specify exception code and message
-            raise exc.NotFoundError()
+            raise exc.UnsupportedHttpMethod(method=method)
 
     @classmethod
     def get_resource(cls):
