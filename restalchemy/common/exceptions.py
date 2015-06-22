@@ -96,7 +96,7 @@ class CollectionNotFoundError(RestAlchemyException):
 class NotFoundError(RestAlchemyException):
 
     message = "Nothing is found on path '%(path)s'"
-    code = 400
+    code = 404
 
 
 class PropertyException(RestAlchemyException, ValueError):
