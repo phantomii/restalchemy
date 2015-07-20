@@ -42,10 +42,15 @@ class PropertyNotFoundError(RestAlchemyException):
     code = 400
 
 
-class NotImplementedError(RestAlchemyException):
+class NotFoundError(RestAlchemyException):
+
+    message = "Nothing is found on path '%(path)s'"
+    code = 404
+
+
+class NotImplementedError(NotFoundError):
 
     message = "Not implemented"
-    code = 400
 
 
 class UnsupportedHttpMethod(RestAlchemyException):
@@ -53,50 +58,37 @@ class UnsupportedHttpMethod(RestAlchemyException):
     code = 405
 
 
-class UnsupportedMethod(RestAlchemyException):
+class UnsupportedMethod(NotFoundError):
     message = "Method '%(method)s' is not supported " \
               "for %(object_name)s"
-    code = 405
 
 
-class LocatorNotFound(RestAlchemyException):
+class LocatorNotFound(NotFoundError):
     message = ("Locator is not found for URI %(uri)s. "
                "Thus resource could not be found. ")
-    code = 404
 
 
-class IncorrectRouteAttributeClass(RestAlchemyException):
+class IncorrectRouteAttributeClass(NotFoundError):
     message = "Route %(route)s is of unacceptable class"
-    code = 400
 
 
-class IncorrectRouteAttribute(RestAlchemyException):
+class IncorrectRouteAttribute(NotFoundError):
     message = "Route %(route)s doesn't have method %(attr)s"
-    code = 400
 
 
-class IncorrectActionCall(RestAlchemyException):
+class IncorrectActionCall(NotFoundError):
     message = "Action %(action)s is incorrectly called with HTTP method %(" \
               "method)s"
-    code = 400
 
 
-class ResourceNotFoundError(RestAlchemyException):
+class ResourceNotFoundError(NotFoundError):
 
     message = "Resource '%(resource)s' is not found on path: %(path)s"
-    code = 404
 
 
-class CollectionNotFoundError(RestAlchemyException):
+class CollectionNotFoundError(NotFoundError):
 
     message = "Collection '%(collection)s' is not found on path: %(path)s"
-    code = 404
-
-
-class NotFoundError(RestAlchemyException):
-
-    message = "Nothing is found on path '%(path)s'"
-    code = 404
 
 
 class PropertyException(RestAlchemyException, ValueError):
