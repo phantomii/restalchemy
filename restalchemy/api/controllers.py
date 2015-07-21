@@ -27,6 +27,7 @@ class Controller(object):
     __resource__ = None
 
     def __init__(self, request):
+        super(Controller, self).__init__()
         self._req = request
 
     def get_packer(self, content_type, resource_type=None):
