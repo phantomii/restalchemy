@@ -68,6 +68,12 @@ class ModelTestCase(base.BaseTestCase):
         self.pm_mock = pm_mock
         self.kwargs = {'kwarg1': 1, 'kwarg2': 2}
         self.test_instance = models.Model(**self.kwargs)
+        self.test_instance.validate = mock.MagicMock()
+
+    def test_validate_call(self):
+        models.Model.validate = mock.MagicMock()
+        test_instance = models.Model(**self.kwargs)
+        test_instance.validate.assert_called_once_with()
 
     def test_obj(self):
         self.assertEqual(self.test_instance.properties, self.PM_MOCK)

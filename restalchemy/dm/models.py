@@ -60,6 +60,7 @@ class Model(collections.Mapping):
     def __init__(self, **kwargs):
         super(Model, self).__init__()
         self.pour(**kwargs)
+        self.validate()
 
     def __getattr__(self, name):
         try:
@@ -106,7 +107,7 @@ class Model(collections.Mapping):
         obj.pour(**kwargs)
         return obj
 
-    def validate(self, value):
+    def validate(self):
         pass
 
     def update(self, values):
