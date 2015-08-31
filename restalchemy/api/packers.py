@@ -18,6 +18,7 @@
 
 import anyjson
 import copy
+import types
 
 from restalchemy.api import resources
 from restalchemy.dm import relationships
@@ -53,7 +54,8 @@ class BaseResourcePacker(object):
             return obj
 
     def pack(self, obj):
-        if isinstance(obj, list):
+        if (isinstance(obj, list) or
+            isinstance(obj, types.GeneratorType)):
             return [self.pack_resource(resource) for resource in obj]
         else:
             return self.pack_resource(obj)
