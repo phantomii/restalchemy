@@ -51,7 +51,7 @@ class Relationship(BaseRelationship):
                 raise exc.PropertyRequired()
             return value
         else:
-            raise exc.PropertyTypeError(value=value, property_type=self._type)
+            raise exc.TypeError(value=value, property_type=self._type)
 
     def is_read_only(self):
         return self._read_only

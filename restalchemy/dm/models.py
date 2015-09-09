@@ -73,7 +73,7 @@ class Model(collections.Mapping):
             self.properties[name].value = value
         except KeyError:
             super(Model, self).__setattr__(name, value)
-        except exc.PropertyTypeError as e:
+        except exc.TypeError as e:
             raise exc.ModelTypeError(
                 property_name=name,
                 value=value,
