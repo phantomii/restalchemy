@@ -18,6 +18,8 @@
 
 import abc
 
+# from sqlalchemy.orm import attributes
+
 from restalchemy.common import exceptions as exc
 
 
@@ -46,22 +48,46 @@ class ResourceMap(object):
         cls.resource_map = resource_map
 
 
-class AbstractResource(object):
-    __metaclass__ = abc.ABCMeta
+class BaseResourceMixIn(object):
+
+    @classmethod
+    def get_name_fields_map(self):
+        return {}
+
+    @classmethod
+    def get_hidden_resource_fields(self):
+        return []
 
     @abc.abstractmethod
     def get_resource_id(self):
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_fields(self):
-        pass
+        raise NotImplementedError()
 
 
-class ResourceMixIn(AbstractResource):
+class AbstractResourceMixIn(BaseResourceMixIn):
+    __metaclass__ = abc.ABCMeta
 
-    _hidden_resource_fields = []
-    _name_fields_map = {}
+    @property
+    def _name_fields_map(self):
+        return self.get_name_fields_map()
+
+    @property
+    def _hidden_resource_fields(self):
+        return self.get_hidden_resource_fields()
+
+    @abc.abstractmethod
+    def get_resource_id(self):
+        return super(AbstractResourceMixIn, self).get_resource_id()
+
+    @abc.abstractmethod
+    def get_fields(self):
+        return super(AbstractResourceMixIn, self).get_fields()
+
+
+class ResourceMixIn(AbstractResourceMixIn):
 
     def get_resource_id(self):
         return self.get_id()
@@ -69,7 +95,23 @@ class ResourceMixIn(AbstractResource):
     @classmethod
     def get_fields(cls):
         for name, prop in cls.properties.iteritems():
-            if ((name in cls._hidden_resource_fields) or
+            if ((name in cls.get_hidden_resource_fields()) or
+                    name.startswith('_')):
+                continue
+            yield name, prop
+
+
+class SAResourceMixIn(BaseResourceMixIn):
+
+    def get_resource_id(self):
+        return self.get_id()
+
+    @classmethod
+    def get_fields(cls):
+        for column in cls.__table__.get_children():
+            name = column.name
+            prop = column
+            if ((name in cls.get_hidden_resource_fields()) or
                     name.startswith('_')):
                 continue
             yield name, prop

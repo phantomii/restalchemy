@@ -38,11 +38,11 @@ class BaseResourcePacker(object):
         self._req = request
 
     def pack_resource(self, obj):
-        if isinstance(obj, resources.ResourceMixIn):
+        if isinstance(obj, resources.BaseResourceMixIn):
             result = {}
             for name, cls_prop in obj.get_fields():
                 prop = obj.properties.get(name)
-                api_name = obj._name_fields_map.get(name, name)
+                api_name = obj.get_name_fields_map().get(name, name)
                 if prop.value is not None:
                     result[api_name.replace('_', '-')] = (
                         resources.ResourceMap.get_location(
@@ -64,7 +64,7 @@ class BaseResourcePacker(object):
         obj = copy.deepcopy(obj)
         result = {}
         for name, prop in self._rt.get_fields():
-                api_name = self._rt._name_fields_map.get(name, name)
+                api_name = self._rt.get_name_fields_map().get(name, name)
                 value = obj.pop(api_name.replace('_', '-'), None)
                 if value is not None:
                     result[name] = (
