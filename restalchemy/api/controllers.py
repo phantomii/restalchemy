@@ -117,7 +117,7 @@ class Controller(object):
 
     @property
     def model(self):
-        return self.get_resource()
+        return self.get_resource().get_model()
 
     def create(self, **kwargs):
         raise exc.NotImplementedError()

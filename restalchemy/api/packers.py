@@ -20,9 +20,6 @@ import anyjson
 import copy
 import types
 
-from restalchemy.api import resources
-from restalchemy.dm import relationships
-
 
 DEFAULT_CONTENT_TYPE = 'application/json'
 
@@ -38,20 +35,25 @@ class BaseResourcePacker(object):
         self._req = request
 
     def pack_resource(self, obj):
-        if isinstance(obj, resources.ResourceMixIn):
-            result = {}
-            for name, cls_prop in obj.get_fields():
-                prop = obj.properties.get(name)
-                api_name = obj._name_fields_map.get(name, name)
-                if prop.value is not None:
-                    result[api_name.replace('_', '-')] = (
-                        resources.ResourceMap.get_location(
-                            prop.value) if isinstance(
-                                prop, relationships.BaseRelationship) else
-                        prop.value)
-            return result
-        else:
+        if isinstance(obj, (types.StringTypes,
+                            types.IntType,
+                            types.LongType,
+                            types.FloatType,
+                            types.BooleanType,
+                            types.NoneType,
+                            types.ListType,
+                            types.TupleType,
+                            types.DictType)):
             return obj
+        else:
+            result = {}
+            for name, prop in self._rt.get_fields():
+                api_name = prop.api_name
+                value = getattr(obj, name)
+                if (value is not None and prop.is_public()):
+                    result[api_name] = prop.dump_value(value)
+
+            return result
 
     def pack(self, obj):
         if (isinstance(obj, list) or
@@ -64,14 +66,12 @@ class BaseResourcePacker(object):
         obj = copy.deepcopy(obj)
         result = {}
         for name, prop in self._rt.get_fields():
-                api_name = self._rt._name_fields_map.get(name, name)
-                value = obj.pop(api_name.replace('_', '-'), None)
-                if value is not None:
-                    result[name] = (
-                        resources.ResourceMap.get_resource(
-                            self._req, value) if issubclass(
-                                prop, relationships.BaseRelationship)
-                        else value)
+            api_name = prop.api_name
+            value = obj.pop(api_name, None)
+            if value is not None:
+                if not prop.is_public():
+                    raise ValueError("Property %s is private" % api_name)
+                result[name] = prop.parse_value(self._req, value)
 
         if len(obj) > 0:
             raise TypeError("%s is not compatible with %s" % (obj, self._rt))
