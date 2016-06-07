@@ -20,6 +20,8 @@ import abc
 import inspect
 import posixpath
 
+import six
+
 from restalchemy.common import exceptions as exc
 
 
@@ -35,8 +37,8 @@ COLLECTION_ROUTE = 1
 RESOURCE_ROUTE = 2
 
 
+@six.add_metaclass(abc.ABCMeta)
 class BaseRoute(object):
-    __metaclass__ = abc.ABCMeta
 
     __controller__ = None
     __allow_methods__ = []
@@ -307,7 +309,7 @@ class Action(BaseRoute):
         controller = self.get_controller(self._req)
         action = getattr(controller, action_name)
         if ((method in [GET, POST, PUT] and self.is_invoke() and invoke) or
-           (method == GET and not self.is_invoke() and not invoke)):
+                (method == GET and not self.is_invoke() and not invoke)):
             action_method = getattr(action, 'do_%s' % method.lower())
             return action_method(controller=controller, resource=resource,
                                  **kwargs)

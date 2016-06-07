@@ -19,6 +19,7 @@
 import abc
 import inspect
 
+import six
 from sqlalchemy.orm import attributes
 from sqlalchemy.orm import properties
 from sqlalchemy.orm import relationships
@@ -69,8 +70,8 @@ class ResourceMap(object):
             raise ValueError("Can't find resource by model (%s)" % model)
 
 
+@six.add_metaclass(abc.ABCMeta)
 class AbstractResourceProperty(object):
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, resource, model_property_name, public=True):
         super(AbstractResourceProperty, self).__init__()
@@ -118,8 +119,8 @@ class ResourceRelationship(AbstractResourceProperty):
         return ResourceMap.get_location(value)
 
 
+@six.add_metaclass(abc.ABCMeta)
 class AbstractResource(object):
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, model_class, name_map=None, hidden_fields=None):
         super(AbstractResource, self).__init__()
