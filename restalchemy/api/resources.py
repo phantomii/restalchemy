@@ -157,6 +157,7 @@ class AbstractResource(object):
         return self._model_class
 
 
+# TODO(efrolov): Implement Resource for RESTAlchemy Models
 class ResourceByRAModel(AbstractResource):
 
     def get_fields(self):
