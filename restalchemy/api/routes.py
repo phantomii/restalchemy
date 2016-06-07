@@ -179,10 +179,11 @@ class Route(BaseRoute):
                     value = getattr(model, name)
                     if isinstance(value, parent_type):
                         models.append(value)
-                if len(models) > 1:
-                    raise ValueError("Can't find resource from %s. Please "
-                                     "indicate the parent model" % str(models))
-                return models[0]
+                if len(models) == 1:
+                    return models[0]
+                raise ValueError("Can't find resource %s. Please "
+                                 "implement get_parent_model in your model "
+                                 "(%s)" % (parent_type, type(model)))
 
             def get_uri(self, model):
                 resource = self.path_stack[-1]
