@@ -189,8 +189,17 @@ class ResourceBySAModel(AbstractResource):
                 yield name, prop
 
     def get_resource_id(self, model):
-        # TODO(efrolov): Rewrite to automatic search
-        if isinstance(model, self._model_class):
+        if not isinstance(model, self._model_class):
+            raise TypeError('Model instance must be %s (not %s)' % (
+                self._model_class, type(model)))
+        if hasattr(model, "get_id"):
             return model.get_id()
-        raise TypeError('Model instance must be %s (not %s)' % (
-            self._model_class, type(model)))
+        primary_keys = []
+        for name, column in self._model_class.__table__.columns.items():
+            if column.primary_key == True:
+                primary_keys.append(name)
+        if len(primary_keys) == 1:
+            return getattr(model, primary_keys[0])
+        raise ValueError("Can't find resource ID for %s. Please implement "
+                         "get_id method in your model (%s)" % (
+                             model, self._model_class))
