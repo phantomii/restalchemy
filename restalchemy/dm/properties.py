@@ -82,6 +82,10 @@ class Property(BaseProperty):
     def set_value_force(self, value):
         self._value = self._safe_value(value)
 
+    @property
+    def property_type(self):
+        return self._type
+
 
 class PropertyCreator(object):
 
