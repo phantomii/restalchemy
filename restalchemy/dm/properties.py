@@ -82,6 +82,10 @@ class Property(BaseProperty):
     def set_value_force(self, value):
         self._value = self._safe_value(value)
 
+    @property
+    def property_type(self):
+        return self._type
+
 
 class PropertyCreator(object):
 
@@ -121,7 +125,7 @@ class PropertyCollection(PropertyMapping):
         super(PropertyCollection, self).__init__()
 
     def __getitem__(self, name):
-            return self.properties[name].get_property_class()
+        return self.properties[name].get_property_class()
 
     @__builtin__.property
     def properties(self):
