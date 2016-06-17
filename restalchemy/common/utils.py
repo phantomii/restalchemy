@@ -1,6 +1,7 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 #
 # Copyright 2014 Eugene Frolov <eugene@frolov.net.ru>
+# Copyright 2014 Mirantis Inc
 #
 # All Rights Reserved.
 #
@@ -27,6 +28,7 @@ class ReadOnlyDictProxy(collections.Mapping):
     This is normally used to create a proxy to prevent modification of the
     dictionary for non-dynamic class types.
     """
+
     def __init__(self, d):
         self._d = d
         self._hash = None
@@ -51,3 +53,25 @@ class ReadOnlyDictProxy(collections.Mapping):
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, self._d)
+
+
+class classproperty(property):
+    """Property for classes
+
+    Standard property cannot be used on classes only on instances.
+    This one was created to overcome this problem. The only limitation
+    is that setter is not working for classes, only getter.
+
+    This property could be used as:
+        class A(object):
+            @classproperty
+            def test(cls):
+                ...some cls processing...
+                return result
+
+        test = A.test  # method 'test' will be called with A class argument
+    """
+
+    def __get__(self, obj, cls):
+            # Calls property function
+        return self.fget(cls)
