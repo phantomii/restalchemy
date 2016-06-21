@@ -223,7 +223,7 @@ class ResourceBySAModel(AbstractResource):
                         self, model_property_name=name,
                         public=self.is_public_field(name))
                 else:
-                    TypeError("Unknown property type %s" % type(attr))
+                    raise TypeError("Unknown property type %s" % type(attr))
                 yield name, prop
 
     def get_resource_id(self, model):
