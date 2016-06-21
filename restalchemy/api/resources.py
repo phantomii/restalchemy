@@ -17,8 +17,12 @@
 #    under the License.
 
 import abc
+import inspect
 
-# from sqlalchemy.orm import attributes
+import six
+from sqlalchemy.orm import attributes
+from sqlalchemy.orm import properties
+from sqlalchemy.orm import relationships
 
 from restalchemy.common import exceptions as exc
 
@@ -26,10 +30,12 @@ from restalchemy.common import exceptions as exc
 class ResourceMap(object):
 
     resource_map = {}
+    model_to_resource = {}
 
     @classmethod
-    def get_location(cls, resource):
-        return cls.resource_map[type(resource)].get_uri(resource)
+    def get_location(cls, model):
+        resource = cls.get_resource_by_model(model)
+        return cls.resource_map[resource].get_uri(model)
 
     @classmethod
     def get_locator(cls, uri):
@@ -47,71 +53,154 @@ class ResourceMap(object):
     def set_resource_map(cls, resource_map):
         cls.resource_map = resource_map
 
-
-class BaseResourceMixIn(object):
+    @classmethod
+    def add_model_to_resource_mapping(self, model_class, resource):
+        if model_class in self.model_to_resource:
+            raise ValueError(
+                "model (%s) for resource (%s) already added. %s" % (
+                    model_class, resource, self.model_to_resource))
+        self.model_to_resource[model_class] = resource
 
     @classmethod
-    def get_name_fields_map(self):
-        return {}
+    def get_resource_by_model(self, model):
+        model_class = model if inspect.isclass(model) else type(model)
+        try:
+            return self.model_to_resource[model_class]
+        except KeyError:
+            raise ValueError("Can't find resource by model (%s)" % model)
 
-    @classmethod
-    def get_hidden_resource_fields(self):
-        return []
+
+@six.add_metaclass(abc.ABCMeta)
+class AbstractResourceProperty(object):
+
+    def __init__(self, resource, model_property_name, public=True):
+        super(AbstractResourceProperty, self).__init__()
+        self._resource = resource
+        self._model_property_name = model_property_name
+        self._hidden = False
+        self._public = public
+
+    def is_public(self):
+        return self._public
+
+    @property
+    def api_name(self):
+        return self._resource.get_resource_field_name(
+            self._model_property_name)
 
     @abc.abstractmethod
-    def get_resource_id(self):
+    def parse_value(self, req, value):
         raise NotImplementedError()
+
+    @abc.abstractmethod
+    def dump_value(self, value):
+        return NotImplementedError()
+
+
+class ResourceProperty(AbstractResourceProperty):
+    pass
+
+
+class ResourceSAProperty(ResourceProperty):
+
+    def parse_value(self, req, value):
+        return value
+
+    def dump_value(self, value):
+        return value
+
+
+class ResourceRelationship(AbstractResourceProperty):
+
+    def parse_value(self, req, value):
+        return ResourceMap.get_resource(req, value)
+
+    def dump_value(self, value):
+        return ResourceMap.get_location(value)
+
+
+@six.add_metaclass(abc.ABCMeta)
+class AbstractResource(object):
+
+    def __init__(self, model_class, name_map=None, hidden_fields=None):
+        super(AbstractResource, self).__init__()
+        self._model_class = model_class
+        self._name_map = name_map or {}
+        self._hidden_fields = hidden_fields or []
+        ResourceMap.add_model_to_resource_mapping(model_class, self)
 
     @abc.abstractmethod
     def get_fields(self):
         raise NotImplementedError()
 
-
-class AbstractResourceMixIn(BaseResourceMixIn):
-    __metaclass__ = abc.ABCMeta
+    @abc.abstractmethod
+    def get_resource_id(self, model):
+        raise NotImplementedError()
 
     @property
-    def _name_fields_map(self):
-        return self.get_name_fields_map()
+    def _m2r_name_map(self):
+        return self._name_map
 
     @property
-    def _hidden_resource_fields(self):
-        return self.get_hidden_resource_fields()
+    def _hidden_model_fields(self):
+        return self._hidden_fields
 
-    @abc.abstractmethod
-    def get_resource_id(self):
-        return super(AbstractResourceMixIn, self).get_resource_id()
+    def get_resource_field_name(self, model_field_name):
+        return self._m2r_name_map.get(
+            model_field_name, model_field_name).replace('_', '-')
 
-    @abc.abstractmethod
+    def is_public_field(self, model_field_name):
+        return not (model_field_name.startswith('_') or
+                    model_field_name in self._hidden_model_fields)
+
+    def get_model(self):
+        return self._model_class
+
+
+# TODO(efrolov): Implement Resource for RESTAlchemy Models
+class ResourceByRAModel(AbstractResource):
+
     def get_fields(self):
-        return super(AbstractResourceMixIn, self).get_fields()
-
-
-class ResourceMixIn(AbstractResourceMixIn):
-
-    def get_resource_id(self):
-        return self.get_id()
-
-    @classmethod
-    def get_fields(cls):
-        for name, prop in cls.properties.iteritems():
-            if ((name in cls.get_hidden_resource_fields()) or
-                    name.startswith('_')):
+        for name, prop in self._model_class.properties.iteritems():
+            if not self.is_public_field(name):
                 continue
             yield name, prop
 
 
-class SAResourceMixIn(BaseResourceMixIn):
+class ResourceBySAModel(AbstractResource):
 
-    def get_resource_id(self):
-        return self.get_id()
+    def get_fields(self):
+        for name in dir(self._model_class):
+            attr = getattr(self._model_class, name)
+            if isinstance(attr, attributes.InstrumentedAttribute):
+                if isinstance(
+                        attr.comparator,
+                        properties.ColumnProperty.Comparator):
+                    prop = ResourceSAProperty(
+                        self, model_property_name=name,
+                        public=self.is_public_field(name))
+                elif isinstance(
+                        attr.comparator,
+                        relationships.RelationshipProperty.Comparator):
+                    prop = ResourceRelationship(
+                        self, model_property_name=name,
+                        public=self.is_public_field(name))
+                else:
+                    TypeError("Unknown property type %s" % type(attr))
+                yield name, prop
 
-    @classmethod
-    def get_fields(cls):
-        for column in cls.__table__.get_children():
-            name = column.name
-            prop = column
-            if ((name in cls.get_hidden_resource_fields()) or
-                    name.startswith('_')):
-                continue
-            yield name, prop
+    def get_resource_id(self, model):
+        if not isinstance(model, self._model_class):
+            raise TypeError('Model instance must be %s (not %s)' % (
+                self._model_class, type(model)))
+        if hasattr(model, "get_id"):
+            return model.get_id()
+        primary_keys = []
+        for name, column in self._model_class.__table__.columns.items():
+            if column.primary_key == True:
+                primary_keys.append(name)
+        if len(primary_keys) == 1:
+            return getattr(model, primary_keys[0])
+        raise ValueError("Can't find resource ID for %s. Please implement "
+                         "get_id method in your model (%s)" % (
+                             model, self._model_class))

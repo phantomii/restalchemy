@@ -20,6 +20,8 @@ import abc
 import inspect
 import posixpath
 
+import six
+
 from restalchemy.common import exceptions as exc
 
 
@@ -35,8 +37,8 @@ COLLECTION_ROUTE = 1
 RESOURCE_ROUTE = 2
 
 
+@six.add_metaclass(abc.ABCMeta)
 class BaseRoute(object):
-    __metaclass__ = abc.ABCMeta
 
     __controller__ = None
     __allow_methods__ = []
@@ -169,24 +171,32 @@ class Route(BaseRoute):
                 else:
                     return False
 
-            def get_parent_resource(self, parent_type, resource):
-                if hasattr(resource, 'get_parent_resource'):
-                    return resource.get_parent_resource()
-                res = [r for r in resource.values()
-                       if isinstance(r, parent_type)]
-                if len(res) > 1:
-                    raise TypeError("Can't change resource from %s. Please "
-                                    "indicate the parent resources" % str(res))
-                return res[0]
+            def get_parent_model(self, parent_type, model, resource):
+                if hasattr(resource, 'get_parent_model'):
+                    return resource.get_parent_model(model)
+                models = []
+                for name, prop in resource.get_fields():
+                    value = getattr(model, name)
+                    if isinstance(value, parent_type):
+                        models.append(value)
+                if len(models) == 1:
+                    return models[0]
+                raise ValueError("Can't find resource %s. Please "
+                                 "implement get_parent_model in your model "
+                                 "(%s)" % (parent_type, type(model)))
 
-            def get_uri(self, resource):
-                path = str(resource.get_resource_id())
+            def get_uri(self, model):
+                resource = self.path_stack[-1]
+                path = str(resource.get_resource_id(model))
                 for piece in reversed(self.path_stack[:-1]):
                     if isinstance(piece, basestring):
                         path = posixpath.join(piece, path)
                     else:
-                        resource = self.get_parent_resource(piece, resource)
-                        path = posixpath.join(resource.get_resource_id(), path)
+                        model = self.get_parent_model(piece.get_model(),
+                                                      model, resource)
+                        resource = piece
+                        path = posixpath.join(resource.get_resource_id(model),
+                                              path)
                 # FIXME(Eugene Frolov): Header must be string. Not unicode.
                 return str(posixpath.join('/', path))
 
@@ -300,7 +310,7 @@ class Action(BaseRoute):
         controller = self.get_controller(self._req)
         action = getattr(controller, action_name)
         if ((method in [GET, POST, PUT] and self.is_invoke() and invoke) or
-           (method == GET and not self.is_invoke() and not invoke)):
+                (method == GET and not self.is_invoke() and not invoke)):
             action_method = getattr(action, 'do_%s' % method.lower())
             return action_method(controller=controller, resource=resource,
                                  **kwargs)
