@@ -137,7 +137,7 @@ class Model(collections.Mapping):
 
 class ModelWithUUID(Model):
     uuid = properties.property(types.UUID, read_only=True,
-                               default=lambda: str(uuid.uuid4()))
+                               default=lambda: uuid.uuid4())
 
     def get_id(self):
         return self.uuid

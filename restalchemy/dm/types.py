@@ -95,10 +95,7 @@ class UUID(BaseType):
         return uuid.UUID(value)
 
     def validate(self, value):
-        try:
-            return bool(uuid.UUID(value))
-        except (TypeError, ValueError, AttributeError):
-            return False
+        return isinstance(value, uuid.UUID)
 
 
 class Dict(BasePythonType):

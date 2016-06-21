@@ -82,7 +82,7 @@ class UUIDTestCase(base.BaseTestCase):
         self.test_instance = types.UUID()
 
     def test_uuid_correct_value(self):
-        self.assertTrue(self.test_instance.validate(str(uuid.uuid4())))
+        self.assertTrue(self.test_instance.validate(uuid.uuid4()))
 
     def test_uuid_incorrect_value(self):
         INCORECT_UUID = '4a775g98-eg85-4a0e-a0g0-639f0a16f4c3'
