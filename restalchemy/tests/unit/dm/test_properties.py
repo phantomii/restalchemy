@@ -166,13 +166,17 @@ class PropertyCreatorTestCase(base.BaseTestCase):
 
     def setUp(self):
         self.property_mock = mock.Mock(return_value=FAKE_VALUE)
+        self.prop_type_mock = mock.Mock()
         self.test_instance = properties.PropertyCreator(self.property_mock,
+                                                        self.prop_type_mock,
                                                         self.ARGS, self.KWARGS)
 
     def test_call_object(self):
         self.assertEqual(self.test_instance(FAKE_VALUE2), FAKE_VALUE)
-        self.property_mock.assert_called_once_with(value=FAKE_VALUE2,
-                                                   *self.ARGS, **self.KWARGS)
+        self.property_mock.assert_called_once_with(
+            value=FAKE_VALUE2,
+            property_type=self.prop_type_mock,
+            *self.ARGS, **self.KWARGS)
 
     def test_get_property_class(self):
         self.assertEqual(self.test_instance.get_property_class(),
@@ -309,7 +313,8 @@ class PropertyFuncTestCase(base.BaseTestCase):
         self.assertEqual(properties.property(*self.ARGS, **self.KWARGS),
                          FAKE_VALUE)
         pc_mock.assert_called_once_with(
-            properties.Property, args=self.ARGS, kwargs=self.KWARGS)
+            prop_class=properties.Property, prop_type=1, args=self.ARGS[1:],
+            kwargs=self.KWARGS)
 
     def test_create_property_with_property_class(self, pc_mock):
 
@@ -326,7 +331,8 @@ class PropertyFuncTestCase(base.BaseTestCase):
             property_class=LocalProperty, *self.ARGS, **self.KWARGS),
             FAKE_VALUE)
         pc_mock.assert_called_once_with(
-            LocalProperty, args=self.ARGS, kwargs=self.KWARGS)
+            prop_class=LocalProperty, prop_type=1, args=self.ARGS[1:],
+            kwargs=self.KWARGS)
 
     def test_create_property_with_incorect_property_class(self, pc_mock):
         self.assertRaises(ValueError, properties.property,

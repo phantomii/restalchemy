@@ -85,16 +85,21 @@ class Property(BaseProperty):
 
 class PropertyCreator(object):
 
-    def __init__(self, prop_class, args, kwargs):
+    def __init__(self, prop_class, prop_type, args, kwargs):
         self._property = prop_class
+        self._property_type = prop_type
         self._args = args
         self._kwargs = kwargs
 
     def __call__(self, value):
-        return self._property(value=value, *self._args, **self._kwargs)
+        return self._property(value=value, property_type=self._property_type,
+                              *self._args, **self._kwargs)
 
     def get_property_class(self):
         return self._property
+
+    def get_property_type(self):
+        return self._property_type
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -121,7 +126,7 @@ class PropertyCollection(PropertyMapping):
         super(PropertyCollection, self).__init__()
 
     def __getitem__(self, name):
-            return self.properties[name].get_property_class()
+        return self.properties[name].get_property_class()
 
     @__builtin__.property
     def properties(self):
@@ -180,11 +185,14 @@ class PropertyManager(PropertyMapping):
             self._properties[k].value = v
 
 
-def property(*args, **kwargs):
+def property(property_type, *args, **kwargs):
     property_class = kwargs.pop('property_class', Property)
     if (inspect.isclass(property_class) and
             issubclass(property_class, AbstractProperty)):
-        return PropertyCreator(property_class, args=args, kwargs=kwargs)
+        return PropertyCreator(prop_class=property_class,
+                               prop_type=property_type,
+                               args=args,
+                               kwargs=kwargs)
     else:
         raise ValueError("Value of property class argument (%s) must be"
                          " inherited on AbstractProperty class"

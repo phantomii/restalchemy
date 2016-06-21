@@ -25,6 +25,8 @@ from sqlalchemy.orm import properties
 from sqlalchemy.orm import relationships
 
 from restalchemy.common import exceptions as exc
+from restalchemy.dm import properties as ra_properties
+from restalchemy.dm import relationships as ra_relationsips
 
 
 class ResourceMap(object):
@@ -110,6 +112,23 @@ class ResourceSAProperty(ResourceProperty):
         return value
 
 
+class ResourceRAProperty(ResourceProperty):
+
+    def __init__(self, resource, prop_type, model_property_name, public=True):
+        super(ResourceRAProperty, self).__init__(
+            resource=resource,
+            model_property_name=model_property_name,
+            public=public)
+        self._prop_type = (
+            prop_type() if inspect.isclass(prop_type) else prop_type)
+
+    def parse_value(self, req, value):
+        return self._prop_type.from_simple_type(value)
+
+    def dump_value(self, value):
+        return self._prop_type.to_simple_type(value)
+
+
 class ResourceRelationship(AbstractResourceProperty):
 
     def parse_value(self, req, value):
@@ -157,14 +176,32 @@ class AbstractResource(object):
         return self._model_class
 
 
-# TODO(efrolov): Implement Resource for RESTAlchemy Models
 class ResourceByRAModel(AbstractResource):
 
     def get_fields(self):
         for name, prop in self._model_class.properties.iteritems():
-            if not self.is_public_field(name):
-                continue
+            if issubclass(prop, ra_properties.BaseProperty):
+                prop = ResourceRAProperty(
+                    resource=self,
+                    prop_type=(self._model_class.properties.properties[name]
+                               .get_property_type()),
+                    model_property_name=name,
+                    public=self.is_public_field(name))
+            elif issubclass(prop, ra_relationsips.BaseRelationship):
+                prop = ResourceRelationship(
+                    self, model_property_name=name,
+                    public=self.is_public_field(name))
+            else:
+                raise TypeError("Unknown property type %s" % type(prop))
             yield name, prop
+
+    def get_resource_id(self, model):
+        if hasattr(model, 'get_id'):
+            return model.get_id()
+        else:
+            raise ValueError("Can't find resource ID for %s. Please implement "
+                             "get_id method in your model (%s)" % (
+                                 model, self._model_class))
 
 
 class ResourceBySAModel(AbstractResource):
