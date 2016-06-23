@@ -39,7 +39,7 @@ six.print_("Response is %s. Headers is %s" % (
 # Create Foo resource
 # -----------------------------------------------------------------------------
 
-url = "http://127.0.0.1:8000/foo/"
+url = "http://127.0.0.1:8000/foos/"
 payload = {
     "foo-field1": 999,
     "foo-field2": "foo obj"
@@ -61,7 +61,7 @@ foo_uuid = response.json()['uuid']
 # Get list of Foo resources
 # -----------------------------------------------------------------------------
 
-url = "http://127.0.0.1:8000/foo/"
+url = "http://127.0.0.1:8000/foos/"
 headers = {
     'cache-control': "no-cache"
 }
@@ -76,7 +76,7 @@ six.print_("Response is %s. Headers is %s" % (
 # Get Foo resource by uuid
 # -----------------------------------------------------------------------------
 
-url = "http://127.0.0.1:8000/foo/%s" % foo_uuid
+url = "http://127.0.0.1:8000/foos/%s" % foo_uuid
 headers = {
     'cache-control': "no-cache"
 }
@@ -86,3 +86,39 @@ response = requests.request("GET", url, headers=headers)
 six.print_("Response is %s. Headers is %s" % (
     response.text,
     response.headers))
+
+
+# -----------------------------------------------------------------------------
+# Create Bar resource
+# -----------------------------------------------------------------------------
+
+url = "http://127.0.0.1:8000/foos/%s/bars/" % foo_uuid
+
+payload = {
+    "bar-field1": "test bar"
+}
+headers = {
+    'content-type': "application/json",
+    'cache-control': "no-cache",
+}
+six.print_("Make POST request to %s with payload %s" % (url, payload))
+response = requests.request("POST", url, json=payload, headers=headers)
+six.print_("Response is %s. Headers is %s" % (
+    response.text,
+    response.headers))
+
+
+bar_uuid = response.json()['uuid']
+
+
+# -----------------------------------------------------------------------------
+# Create Bar resource
+# -----------------------------------------------------------------------------
+
+url = "http://127.0.0.1:8000/bars/%s" % bar_uuid
+headers = {
+    'cache-control': "no-cache"
+}
+six.print_("Make DELETE request to %s" % url)
+response = requests.request("DELETE", url, headers=headers)
+six.print_("Done!")

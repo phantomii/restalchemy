@@ -26,6 +26,7 @@ from restalchemy.api import resources
 from restalchemy.api import routes
 from restalchemy.dm import models
 from restalchemy.dm import properties
+from restalchemy.dm import relationships
 from restalchemy.dm import types
 
 HOST = '0.0.0.0'
@@ -35,17 +36,22 @@ PORT = 8000
 # Storage for foo objects
 foo_storage = {}
 # Storage for bar objects
-bar_objects = {}
+bar_storage = {}
 
 
 # -----------------------------------------------------------------------------
 # Models section
 # -----------------------------------------------------------------------------
-
+# BarModel 1--->n FooModel
 
 class FooModel(models.ModelWithUUID):
-    foo_field1 = properties.property(types.Integer)
-    foo_field2 = properties.property(types.String)
+    foo_field1 = properties.property(types.Integer, required=True)
+    foo_field2 = properties.property(types.String, default="foo_str")
+
+
+class BarModel(models.ModelWithUUID):
+    bar_field1 = properties.property(types.String(min_length=1, max_length=10))
+    foo = relationships.relationship(FooModel)
 
 
 # -----------------------------------------------------------------------------
@@ -77,14 +83,52 @@ class FooController(controllers.Controller):
         return foo_storage.values()
 
 
+bar_resource = resources.ResourceByRAModel(BarModel)
+
+
+class BarController1(controllers.Controller):
+    """Handle http://127.0.0.1:8000/foo/<uuid>/bars/"""
+
+    __resource__ = bar_resource
+
+    def create(self, bar_field1, parent_resource):
+        bar = BarModel(bar_field1=bar_field1, foo=parent_resource)
+        bar_storage[str(bar.uuid)] = bar
+        return bar
+
+
+class BarController2(controllers.Controller):
+    """Handle http://127.0.0.1:8000/bar/<uuid>"""
+
+    __resource__ = bar_resource
+
+    def get(self, uuid):
+        return bar_storage[uuid]
+
+    def delete(self, uuid):
+        del bar_storage[uuid]
+
+
 # -----------------------------------------------------------------------------
 # Routes section
 # -----------------------------------------------------------------------------
 
 
+class BarRoute1(routes.Route):
+    __controller__ = BarController1
+    __allow_methods__ = [routes.CREATE]
+
+
+class BarRoute2(routes.Route):
+    __controller__ = BarController2
+    __allow_methods__ = [routes.GET, routes.DELETE]
+
+
 class FooRoute(routes.Route):
     __controller__ = FooController
     __allow_methods__ = [routes.FILTER, routes.CREATE, routes.GET]
+
+    bars = routes.route(BarRoute1, resource_route=True)
 
 
 class V1Route(routes.Route):
@@ -94,7 +138,8 @@ class V1Route(routes.Route):
 
     # V1Route include two nested routes
     # The first route for /foo/ path
-    foo = routes.route(FooRoute)
+    foos = routes.route(FooRoute)
+    bars = routes.route(BarRoute2)
 
 
 def main():
