@@ -19,12 +19,12 @@ from restalchemy.dm import models
 from restalchemy.dm import properties
 
 
-def relationship(*args, **kwargs):
+def relationship(property_type, *args, **kwargs):
     for arg in args:
         if not issubclass(arg, models.Model):
             raise exc.RelationshipModelError(model=arg)
     kwargs['property_class'] = kwargs.get('property_class', Relationship)
-    return properties.property(*args, **kwargs)
+    return properties.property(property_type=property_type, *args, **kwargs)
 
 
 class BaseRelationship(properties.AbstractProperty):
@@ -33,9 +33,9 @@ class BaseRelationship(properties.AbstractProperty):
 
 class Relationship(BaseRelationship):
 
-    def __init__(self, property_types, default=None, required=False,
+    def __init__(self, property_type, default=None, required=False,
                  read_only=False, value=None):
-        self._types = property_types
+        self._type = property_type
         self._required = bool(required)
         self._read_only = bool(read_only)
         self._default = None
@@ -46,7 +46,7 @@ class Relationship(BaseRelationship):
         self._value = value
 
     def _safe_value(self, value):
-        if value is None or isinstance(value, self._types):
+        if value is None or isinstance(value, self._type):
             if value is None and self.is_required():
                 raise exc.PropertyRequired()
             return value
