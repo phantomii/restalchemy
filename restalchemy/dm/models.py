@@ -110,7 +110,7 @@ class Model(collections.Mapping):
     def validate(self):
         pass
 
-    def update(self, values):
+    def update_dm(self, values):
         for name, value in values.iteritems():
             setattr(self, name, value)
 
