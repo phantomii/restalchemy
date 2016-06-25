@@ -47,11 +47,12 @@ class BaseProperty(AbstractProperty):
 class Property(BaseProperty):
 
     def __init__(self, property_type, default=None, required=False,
-                 read_only=False, value=None):
+                 read_only=False, value=None, id_property=False):
         self._type = (property_type() if inspect.isclass(property_type)
                       else property_type)
         self._required = bool(required)
         self._read_only = bool(read_only)
+        self._id_property = id_property
         default = default() if callable(default) else default
         self.set_value_force(value if value is not None else default)
 
@@ -69,13 +70,16 @@ class Property(BaseProperty):
     def is_required(self):
         return self._required
 
+    def is_id_propery(self):
+        return self._id_property
+
     @__builtin__.property
     def value(self):
         return self._value
 
     @value.setter
     def value(self, value):
-        if (self.is_read_only()):
+        if (self.is_read_only() or self.is_id_propery()):
             raise exc.ReadOnlyProperty()
         self._value = self._safe_value(value)
 

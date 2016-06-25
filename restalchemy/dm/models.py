@@ -113,6 +113,19 @@ class Model(collections.Mapping):
     def update_dm(self, values):
         for name, value in values.iteritems():
             setattr(self, name, value)
+    def get_id_properties(self):
+        result = {}
+        for name, prop in self.properties.items():
+            if prop.is_id_propery():
+                result[name] = prop
+        return result
+
+    def get_data_properties(self):
+        result = {}
+        for name, prop in self.properties.items():
+            if not prop.is_id_propery():
+                result[name] = prop
+        return result
 
     def __getitem__(self, name):
         return self.properties[name].value
@@ -136,11 +149,16 @@ class Model(collections.Mapping):
 
 
 class ModelWithUUID(Model):
-    uuid = properties.property(types.UUID, read_only=True,
+    uuid = properties.property(types.UUID, read_only=True, id_property=True,
                                default=lambda: uuid.uuid4())
 
     def get_id(self):
-        return self.uuid
+        properties = self.get_id_properties()
+        if len(properties) == 1:
+            return self.uuid
+        raise TypeError("Model %s has many properties which marked as "
+                        "id_property. Please implement get_id method on your "
+                        "model." % type(self))
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
