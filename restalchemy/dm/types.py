@@ -53,10 +53,12 @@ class BasePythonType(BaseType):
     def validate(self, value):
         return isinstance(value, self._python_type)
 
-    def to_simple_type(self, value):
+    @classmethod
+    def to_simple_type(cls, value):
         return value
 
-    def from_simple_type(self, value):
+    @classmethod
+    def from_simple_type(cls, value):
         return value
 
 
@@ -88,10 +90,12 @@ class Integer(BasePythonType):
 
 class UUID(BaseType):
 
-    def to_simple_type(self, value):
+    @classmethod
+    def to_simple_type(cls, value):
         return str(value)
 
-    def from_simple_type(self, value):
+    @classmethod
+    def from_simple_type(cls, value):
         return uuid.UUID(value)
 
     def validate(self, value):
@@ -132,10 +136,12 @@ class BaseRegExpType(BaseType):
         except TypeError:
             return False
 
-    def to_simple_type(self, value):
+    @classmethod
+    def to_simple_type(cls, value):
         return value
 
-    def from_simple_type(self, value):
+    @classmethod
+    def from_simple_type(cls, value):
         return value
 
 
