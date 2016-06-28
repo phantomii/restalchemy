@@ -47,12 +47,11 @@ class BaseProperty(AbstractProperty):
 class Property(BaseProperty):
 
     def __init__(self, property_type, default=None, required=False,
-                 read_only=False, value=None, id_property=False):
+                 read_only=False, value=None):
         self._type = (property_type() if inspect.isclass(property_type)
                       else property_type)
         self._required = bool(required)
         self._read_only = bool(read_only)
-        self._id_property = id_property
         default = default() if callable(default) else default
         self.set_value_force(value if value is not None else default)
 
@@ -70,8 +69,9 @@ class Property(BaseProperty):
     def is_required(self):
         return self._required
 
-    def is_id_property(self):
-        return self._id_property
+    @classmethod
+    def is_id_property(cls):
+        return False
 
     @__builtin__.property
     def value(self):
@@ -89,6 +89,13 @@ class Property(BaseProperty):
     @property
     def property_type(self):
         return self._type
+
+
+class IDProperty(Property):
+
+    @classmethod
+    def is_id_property(self):
+        return True
 
 
 class PropertyCreator(object):
@@ -194,7 +201,9 @@ class PropertyManager(PropertyMapping):
 
 
 def property(property_type, *args, **kwargs):
-    property_class = kwargs.pop('property_class', Property)
+    id_property = kwargs.pop('id_property', False)
+    property_class = kwargs.pop('property_class',
+                                IDProperty if id_property else Property)
     if (inspect.isclass(property_class) and
             issubclass(property_class, AbstractProperty)):
         return PropertyCreator(prop_class=property_class,
