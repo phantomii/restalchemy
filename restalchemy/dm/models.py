@@ -60,7 +60,6 @@ class Model(collections.Mapping):
     def __init__(self, **kwargs):
         super(Model, self).__init__()
         self.pour(**kwargs)
-        self.validate()
 
     def __getattr__(self, name):
         try:
@@ -92,6 +91,7 @@ class Model(collections.Mapping):
                 self.properties,
                 **kwargs
             )
+            self.validate()
         except exc.PropertyRequired as e:
             raise exc.PropertyRequired(
                 name=e.name,
@@ -102,8 +102,8 @@ class Model(collections.Mapping):
     def restore(cls, **kwargs):
         obj = cls.__new__(cls)
 
-        # NOTE(aostapenko) We can't invoke 'pour' from __new__ because of
-        # copy.copy of object becomes imposible
+        # NOTE(aostapenko): We can't invoke 'pour' from __new__ because of
+        #                   copy.copy of object becomes imposible
         obj.pour(**kwargs)
         return obj
 
