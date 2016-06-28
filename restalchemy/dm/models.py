@@ -113,17 +113,18 @@ class Model(collections.Mapping):
     def update_dm(self, values):
         for name, value in values.iteritems():
             setattr(self, name, value)
+
     def get_id_properties(self):
         result = {}
         for name, prop in self.properties.items():
-            if prop.is_id_propery():
+            if prop.is_id_property():
                 result[name] = prop
         return result
 
     def get_data_properties(self):
         result = {}
         for name, prop in self.properties.items():
-            if not prop.is_id_propery():
+            if not prop.is_id_property():
                 result[name] = prop
         return result
 

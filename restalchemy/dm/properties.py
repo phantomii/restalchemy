@@ -70,7 +70,7 @@ class Property(BaseProperty):
     def is_required(self):
         return self._required
 
-    def is_id_propery(self):
+    def is_id_property(self):
         return self._id_property
 
     @__builtin__.property
@@ -79,7 +79,7 @@ class Property(BaseProperty):
 
     @value.setter
     def value(self, value):
-        if (self.is_read_only() or self.is_id_propery()):
+        if (self.is_read_only() or self.is_id_property()):
             raise exc.ReadOnlyProperty()
         self._value = self._safe_value(value)
 
