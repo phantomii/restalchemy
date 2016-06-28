@@ -17,32 +17,14 @@
 #    under the License.
 
 import abc
-import contextlib
 import urlparse
 
 from mysql.connector import pooling
 import six
 
 from restalchemy.common import singletons
-
-
-class Session(object):
-
-    def __init__(self, conn):
-        self._conn = conn
-        self._cursor = conn.cursor()
-
-    def execute(self, statement, values):
-        return self._cursor.execute(statement, values)
-
-    def rollback(self):
-        self._conn.rollback()
-
-    def commit(self):
-        self._conn.commit()
-
-    def close(self):
-        self._conn.close()
+from restalchemy.storage.sql.dialect import mysql
+from restalchemy.storage.sql import sessions
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -113,20 +95,7 @@ class MySQLEngine(AbstractEngine):
         return self._pool.get_connection()
 
     def get_session(self):
-        return Session(self.get_connection())
-
-    @property
-    @contextlib.contextmanager
-    def ctx_session(self):
-        session = Session(self.get_connection())
-        try:
-            yield session
-            session.commit()
-        except Exception:
-            session.rollback()
-            raise
-        finally:
-            session.close()
+        return sessions.MySQLSession(self.get_connection())
 
 
 class EngineFactory(singletons.InheritSingleton):
