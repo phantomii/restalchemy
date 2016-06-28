@@ -70,6 +70,11 @@ class MySQLEngine(AbstractEngine):
             'port': self.db_port
         })
         self._pool = pooling.MySQLConnectionPool(**config)
+        self._dialect = mysql.MySQLDialect()
+
+    @property
+    def dialect(self):
+        return self._dialect
 
     @property
     def db_name(self):

@@ -20,53 +20,54 @@ import abc
 
 import six
 
-from restalchemy.common import utils
-
 
 @six.add_metaclass(abc.ABCMeta)
-class AbstractObjectCollection(object):
+class AbstractProcessResult(object):
 
-    def __init__(self, model_cls):
-        super(AbstractObjectCollection, self).__init__()
-        self.model_cls = model_cls
-
-    @abc.abstractmethod
-    def get_all(self, filter=None):
-        raise NotImplementedError()
+    def __init__(self, result):
+        self._result = result
 
     @abc.abstractmethod
-    def get_one(self, filter=None):
+    def get_count(self):
         raise NotImplementedError()
 
 
 @six.add_metaclass(abc.ABCMeta)
-class AbstractStorableMixin(object):
+class AbstractDialectCommand(object):
 
-    _ObjectCollection = AbstractObjectCollection
-
-    def _get_prepared_data(self, properties=None):
-        result = {}
-        props = properties or self.properties
-        for name, prop in props.items():
-            result[name] = prop.property_type.to_simple_type(prop.value)
-        return result
-
-    @utils.classproperty
-    def objects(cls):
-        return cls._ObjectCollection(cls)
+    def __init__(self, table, data):
+        self._table = table
+        self._data = data
 
     @abc.abstractmethod
-    def insert(self):
+    def get_values(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def update(self):
+    def get_statement(self):
         raise NotImplementedError()
 
-    @abc.abstractmethod
-    def save(self):
+    def execute(self, session):
+        values = self.get_values()
+        statement = self.get_statement()
+        return session.execute(statement, values)
+
+
+@six.add_metaclass(abc.ABCMeta)
+class AbstractDialect(object):
+
+    @abc.abstractproperty
+    def insert(self, table, data):
         raise NotImplementedError()
 
-    @abc.abstractmethod
-    def delete(self):
+    @abc.abstractproperty
+    def update(self, table, ids, data):
+        raise NotImplementedError()
+
+    @abc.abstractproperty
+    def delete(self, table, ids):
+        raise NotImplementedError()
+
+    @abc.abstractproperty
+    def select(self, table, filters):
         raise NotImplementedError()
