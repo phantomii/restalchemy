@@ -71,3 +71,11 @@ class Relationship(BaseRelationship):
 
     def set_value_force(self, value):
         self._value = self._safe_value(value)
+
+    @property
+    def property_type(self):
+        return self._type
+
+    @classmethod
+    def is_id_property(self):
+        return False

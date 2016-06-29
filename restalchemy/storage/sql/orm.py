@@ -181,3 +181,19 @@ class SQLStorableMixin(base.AbstractStorableMixin):
                 session=s)
             # TODO(efrolov): Check result
             return result
+
+    @classmethod
+    def to_simple_type(cls, value):
+        for prop in value.properties.values():
+            if prop.is_id_property():
+                return prop.property_type.to_simple_type(value.get_id())
+        raise ValueError("Model (%s) should contain a property of IdProperty "
+                         "type" % value)
+
+    @classmethod
+    def from_simple_type(cls, value):
+        for name, prop in cls.properties.items():
+            if prop.is_id_property():
+                value = (cls.properties.properties[name].get_property_type()
+                         .from_simple_type(value))
+                return cls.objects.get_one(filters={name: value})
