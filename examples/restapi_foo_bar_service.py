@@ -60,14 +60,14 @@ class BarModel(models.ModelWithUUID):
 
 
 class V1Controller(controllers.Controller):
-    """Handle http://127.0.0.1:8000/"""
+    """Handle http://127.0.0.1:8000/."""
 
     def filter(self, **kwargs):
         return ['v1']
 
 
 class FooController(controllers.Controller):
-    """Handle http://127.0.0.1:8000/foo/"""
+    """Handle http://127.0.0.1:8000/foo/."""
 
     __resource__ = resources.ResourceByRAModel(FooModel)
 
@@ -87,7 +87,7 @@ bar_resource = resources.ResourceByRAModel(BarModel)
 
 
 class BarController1(controllers.Controller):
-    """Handle http://127.0.0.1:8000/foo/<uuid>/bars/"""
+    """Handle http://127.0.0.1:8000/foo/<uuid>/bars/."""
 
     __resource__ = bar_resource
 
@@ -98,7 +98,7 @@ class BarController1(controllers.Controller):
 
 
 class BarController2(controllers.Controller):
-    """Handle http://127.0.0.1:8000/bar/<uuid>"""
+    """Handle http://127.0.0.1:8000/bar/<uuid>."""
 
     __resource__ = bar_resource
 
@@ -132,7 +132,7 @@ class FooRoute(routes.Route):
 
 
 class V1Route(routes.Route):
-    """Router for / path"""
+    """Router for / path."""
     __controller__ = V1Controller
     __allow_methods__ = [routes.FILTER]
 

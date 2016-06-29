@@ -60,7 +60,6 @@ class Model(collections.Mapping):
     def __init__(self, **kwargs):
         super(Model, self).__init__()
         self.pour(**kwargs)
-        self.validate()
 
     def __getattr__(self, name):
         try:
@@ -92,6 +91,7 @@ class Model(collections.Mapping):
                 self.properties,
                 **kwargs
             )
+            self.validate()
         except exc.PropertyRequired as e:
             raise exc.PropertyRequired(
                 name=e.name,
@@ -102,17 +102,31 @@ class Model(collections.Mapping):
     def restore(cls, **kwargs):
         obj = cls.__new__(cls)
 
-        # NOTE(aostapenko) We can't invoke 'pour' from __new__ because of
-        # copy.copy of object becomes imposible
+        # NOTE(aostapenko): We can't invoke 'pour' from __new__ because of
+        #                   copy.copy of object becomes imposible
         obj.pour(**kwargs)
         return obj
 
     def validate(self):
         pass
 
-    def update(self, values):
+    def update_dm(self, values):
         for name, value in values.iteritems():
             setattr(self, name, value)
+
+    def get_id_properties(self):
+        result = {}
+        for name, prop in self.properties.items():
+            if prop.is_id_property():
+                result[name] = prop
+        return result
+
+    def get_data_properties(self):
+        result = {}
+        for name, prop in self.properties.items():
+            if not prop.is_id_property():
+                result[name] = prop
+        return result
 
     def __getitem__(self, name):
         return self.properties[name].value
@@ -136,11 +150,16 @@ class Model(collections.Mapping):
 
 
 class ModelWithUUID(Model):
-    uuid = properties.property(types.UUID, read_only=True,
+    uuid = properties.property(types.UUID, read_only=True, id_property=True,
                                default=lambda: uuid.uuid4())
 
     def get_id(self):
-        return self.uuid
+        properties = self.get_id_properties()
+        if len(properties) == 1:
+            return self.uuid
+        raise TypeError("Model %s has many properties which marked as "
+                        "id_property. Please implement get_id method on your "
+                        "model." % type(self))
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

@@ -69,18 +69,33 @@ class Property(BaseProperty):
     def is_required(self):
         return self._required
 
+    @classmethod
+    def is_id_property(cls):
+        return False
+
     @__builtin__.property
     def value(self):
         return self._value
 
     @value.setter
     def value(self, value):
-        if (self.is_read_only()):
+        if (self.is_read_only() or self.is_id_property()):
             raise exc.ReadOnlyProperty()
         self._value = self._safe_value(value)
 
     def set_value_force(self, value):
         self._value = self._safe_value(value)
+
+    @property
+    def property_type(self):
+        return self._type
+
+
+class IDProperty(Property):
+
+    @classmethod
+    def is_id_property(self):
+        return True
 
 
 class PropertyCreator(object):
@@ -186,7 +201,9 @@ class PropertyManager(PropertyMapping):
 
 
 def property(property_type, *args, **kwargs):
-    property_class = kwargs.pop('property_class', Property)
+    id_property = kwargs.pop('id_property', False)
+    property_class = kwargs.pop('property_class',
+                                IDProperty if id_property else Property)
     if (inspect.isclass(property_class) and
             issubclass(property_class, AbstractProperty)):
         return PropertyCreator(prop_class=property_class,

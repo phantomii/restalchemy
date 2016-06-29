@@ -53,10 +53,12 @@ class BasePythonType(BaseType):
     def validate(self, value):
         return isinstance(value, self._python_type)
 
-    def to_simple_type(self, value):
+    @classmethod
+    def to_simple_type(cls, value):
         return value
 
-    def from_simple_type(self, value):
+    @classmethod
+    def from_simple_type(cls, value):
         return value
 
 
@@ -88,22 +90,26 @@ class Integer(BasePythonType):
 
 class UUID(BaseType):
 
-    def to_simple_type(self, value):
+    @classmethod
+    def to_simple_type(cls, value):
         return str(value)
 
-    def from_simple_type(self, value):
+    @classmethod
+    def from_simple_type(cls, value):
         return uuid.UUID(value)
 
     def validate(self, value):
         return isinstance(value, uuid.UUID)
 
 
+# TODO(efrolov): Make converters to convert Dict type to storable type
 class Dict(BasePythonType):
 
     def __init__(self):
         super(Dict, self).__init__(dict)
 
 
+# TODO(efrolov): Make converters to convert Enum type to storable type
 class Enum(BaseType):
 
     def __init__(self, enum_values):
@@ -113,6 +119,7 @@ class Enum(BaseType):
     def validate(self, value):
         return value in self._enums_values
 
+    # TODO(efrolov): Fix converters
     def to_simple_type(self, value):
         return self._enums_values
 
@@ -132,10 +139,12 @@ class BaseRegExpType(BaseType):
         except TypeError:
             return False
 
-    def to_simple_type(self, value):
+    @classmethod
+    def to_simple_type(cls, value):
         return value
 
-    def from_simple_type(self, value):
+    @classmethod
+    def from_simple_type(cls, value):
         return value
 
 
