@@ -19,10 +19,10 @@
 from restalchemy.storage.sql.dialect import base
 
 
-class SQLiteProcessResult(base.AbstractProcessResult):
+class MySQLProcessResult(base.AbstractProcessResult):
 
     def __init__(self, result):
-        super(SQLiteProcessResult, self).__init__(result)
+        super(MySQLProcessResult, self).__init__(result)
         self._rows = None
 
     def get_count(self):
@@ -42,7 +42,7 @@ class SQLiteProcessResult(base.AbstractProcessResult):
 class AbstractDialectCommand(base.AbstractDialectCommand):
 
     def execute(self, session):
-        return SQLiteProcessResult(
+        return MySQLProcessResult(
             super(AbstractDialectCommand, self).execute(session))
 
 
