@@ -23,12 +23,11 @@ Apply migrations:
 ::
 
   $ ra-apply-migration --path examples/migrations/ --db-connection mysql://test:test@localhost/test -m 5st
-
-> upgrade 1st
-> upgrade 2st
-> upgrade 3st
-> upgrade 4st
-> upgrade 5st
+  > upgrade 1st
+  > upgrade 2st
+  > upgrade 3st
+  > upgrade 4st
+  > upgrade 5st
 
 
 Rolled back migrations:
