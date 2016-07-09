@@ -42,7 +42,7 @@ Rolled back migrations:
 
 ::
 
-  $ ra-rollback-migration --path examples/migrations/ --db-connection mysql://test:OyO83AdIn9hbK3uz@cameron.synapse.net.ru/test -m 1st
+  $ ra-rollback-migration --path examples/migrations/ --db-connection mysql://test:test@localhost/test -m 1st
 
 > downgrade 3st
 > downgrade 2st
