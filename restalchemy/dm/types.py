@@ -62,6 +62,16 @@ class BasePythonType(BaseType):
         return value
 
 
+class Boolean(BasePythonType):
+
+    def __init__(self):
+        super(Boolean, self).__init__(bool)
+
+    @classmethod
+    def from_simple_type(cls, value):
+        return bool(value)
+
+
 class String(BasePythonType):
 
     def __init__(self, min_length=0, max_length=six.MAXSIZE):
