@@ -35,14 +35,12 @@ Rolled back migrations:
 ::
 
   $ ra-rollback-migration --path examples/migrations/ --db-connection mysql://test:test@localhost/test -m 4st
-  
-> downgrade 5st
-> downgrade 4st
+  > downgrade 5st
+  > downgrade 4st
 
 ::
 
   $ ra-rollback-migration --path examples/migrations/ --db-connection mysql://test:test@localhost/test -m 1st
-
-> downgrade 3st
-> downgrade 2st
-> downgrade 1st
+  > downgrade 3st
+  > downgrade 2st
+  > downgrade 1st
