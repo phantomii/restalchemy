@@ -98,6 +98,20 @@ class Integer(BasePythonType):
         return result and value >= self.min_value and value <= self.max_value
 
 
+class Float(BasePythonType):
+
+    def __init__(self, min_value=-INFINITI, max_value=INFINITI):
+        super(Float, self).__init__(float)
+        self.min_value = (
+            min_value if min_value == -INFINITI else float(min_value))
+        self.max_value = max_value if max_value == INFINITI else float(
+            max_value)
+
+    def validate(self, value):
+        result = super(Float, self).validate(value)
+        return result and value >= self.min_value and value <= self.max_value
+
+
 class UUID(BaseType):
 
     @classmethod

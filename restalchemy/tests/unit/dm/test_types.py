@@ -193,6 +193,42 @@ class IntegerTestCase(base.BaseTestCase):
         self.assertTrue(test_instance.validate(-six.MAXSIZE))
 
 
+class FloatTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(FloatTestCase, self).setUp()
+
+        self.test_instance = types.Float(0.0, 55.0)
+
+    def test_validate_correct_value(self):
+        self.assertTrue(self.test_instance.validate(30.0))
+
+    def test_validate_correct_max_value(self):
+        self.assertTrue(self.test_instance.validate(55.0))
+
+    def test_validate_correct_min_value(self):
+        self.assertTrue(self.test_instance.validate(0.0))
+
+    def test_validate_incorrect_value(self):
+        self.assertFalse(self.test_instance.validate("TEST_STR_VALUE"))
+
+    def test_validate_incorrect_max_value(self):
+        self.assertFalse(self.test_instance.validate(56.0))
+
+    def test_validate_incorrect_min_value(self):
+        self.assertFalse(self.test_instance.validate(-1.0))
+
+    def test_validate_sys_max_value(self):
+        test_instance = types.Float()
+
+        self.assertTrue(test_instance.validate(float(six.MAXSIZE)))
+
+    def test_validate_sys_min_value(self):
+        test_instance = types.Float()
+
+        self.assertTrue(test_instance.validate(float(-six.MAXSIZE)))
+
+
 class UriTestCase(BaseTestCase):
 
     def setUp(self):
