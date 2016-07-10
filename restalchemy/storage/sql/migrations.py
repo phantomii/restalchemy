@@ -149,9 +149,11 @@ class MigrationEngine(object):
         try:
             for filename in os.listdir(self._migrations_path):
                 if filename.endswith('.py'):
-                    migration_step = __import__(filename[:-3]).migration_step
+                    migration = __import__(filename[:-3])
+                    if not hasattr(migration, 'migration_step'):
+                        continue
                     migrations[filename] = MigrationStepController(
-                        migration_step=migration_step,
+                        migration_step=migration.migration_step,
                         filename=filename,
                         session=session)
             return migrations
