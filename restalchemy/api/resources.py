@@ -196,9 +196,11 @@ class ResourceByRAModel(AbstractResource):
             yield name, prop
 
     def get_resource_id(self, model):
+        # TODO(efrolov): Write code to convert value to simple value.
         if hasattr(model, 'get_id'):
-            return model.get_id()
+            return str(model.get_id())
         else:
+            # TODO(efrolov): Add autosearch resource id by model
             raise ValueError("Can't find resource ID for %s. Please implement "
                              "get_id method in your model (%s)" % (
                                  model, self._model_class))
