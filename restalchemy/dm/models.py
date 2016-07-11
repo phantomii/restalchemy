@@ -43,7 +43,7 @@ class MetaModel(abc.ABCMeta):
                 all_base_properties += base_properties
         attrs['properties'] = (
             attrs.pop('properties', properties.PropertyCollection()) +
-            properties.PropertyCollection(**props) + all_base_properties)
+            all_base_properties + properties.PropertyCollection(**props))
         return super(MetaModel, cls).__new__(cls, name, bases, attrs)
 
     def __getattr__(cls, name):
