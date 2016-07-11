@@ -131,8 +131,8 @@ class MySQLSelect(AbstractDialectCommand):
             ", ".join(self._table.get_column_names()),
             self._table.name
         )
-        filt = "AND".join(["%s = %s" % (param, "%s")
-                           for param in sorted(self._filters.keys())])
+        filt = " AND ".join(["%s = %s" % (param, "%s")
+                             for param in sorted(self._filters.keys())])
         return sql + " WHERE %s" % filt if filt else sql
 
 
