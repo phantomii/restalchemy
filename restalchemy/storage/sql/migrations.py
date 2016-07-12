@@ -135,12 +135,12 @@ class MigrationEngine(object):
                 })
 
     def _init_migration_table(self, session):
-        statement = """CREATE TABLE IF NOT EXISTS %s (
+        statement = ("""CREATE TABLE IF NOT EXISTS %s (
             uuid CHAR(36) NOT NULL,
             applied BIT(1) NOT NULL,
             PRIMARY KEY (uuid)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-        """ % RA_MIGRATION_TABLE_NAME
+        """) % RA_MIGRATION_TABLE_NAME
         session.execute(statement, None)
 
     def _load_migrations(self, session):

@@ -1,7 +1,10 @@
 REST Alchemy
 ============
 
+[![Build Status](https://travis-ci.org/phantomii/restalchemy.svg?branch=master)](https://travis-ci.org/phantomii/restalchemy)
+
 The Python REST HTTP Toolkit and Object Relational Mapper.
+
 
 
 Migration commands
