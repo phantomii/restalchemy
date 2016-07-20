@@ -284,10 +284,6 @@ class RootController(controllers.Controller):
 
     def filter(self):
         return ["vms"]
-        # session = SESSION_MAKER()
-        # vms = session.query(VM).all()
-        # session.close()
-        # return vms
 
 
 # -----------------------------------------------------------------------------
