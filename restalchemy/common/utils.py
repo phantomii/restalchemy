@@ -75,3 +75,10 @@ class classproperty(property):
     def __get__(self, obj, cls):
             # Calls property function
         return self.fget(cls)
+
+
+def lastslash(url):
+    if url and url[-1] != '/':
+        return url + '/'
+    else:
+        return url
