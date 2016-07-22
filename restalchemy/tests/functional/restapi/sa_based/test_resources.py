@@ -27,7 +27,7 @@ from restalchemy.tests.functional.restapi.sa_based.microservice import service
 from restalchemy.tests.unit import base
 
 
-SERVICE_ENDPOINT = utils.lastslash("http://127.0.0.1:8080/")
+SERVICE_ENDPOINT = utils.lastslash("http://127.0.0.1:8123/")
 ROOT_COLLECTION_ENDPOINT = SERVICE_ENDPOINT
 V1_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(SERVICE_ENDPOINT, 'v1'))
 VMS_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(V1_COLLECTION_ENDPOINT,
