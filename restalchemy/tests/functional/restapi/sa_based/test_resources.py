@@ -15,6 +15,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import random
+
 import mock
 import requests
 from six.moves.urllib import parse
@@ -27,12 +29,13 @@ from restalchemy.tests.functional.restapi.sa_based.microservice import service
 from restalchemy.tests.unit import base
 
 
-SERVICE_ENDPOINT = utils.lastslash("http://127.0.0.1:8123/")
-ROOT_COLLECTION_ENDPOINT = SERVICE_ENDPOINT
-V1_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(SERVICE_ENDPOINT, 'v1'))
-VMS_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(V1_COLLECTION_ENDPOINT,
-                                                        'vms'))
-TEMPL_VM_RESOURCE_ENDPOINT = parse.urljoin(VMS_COLLECTION_ENDPOINT, '%s')
+TEMPL_SERVICE_ENDPOINT = utils.lastslash("http://127.0.0.1:%s/")
+TEMPL_ROOT_COLLECTION_ENDPOINT = TEMPL_SERVICE_ENDPOINT
+TEMPL_V1_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
+    TEMPL_SERVICE_ENDPOINT, 'v1'))
+TEMPL_VMS_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
+    TEMPL_V1_COLLECTION_ENDPOINT, 'vms'))
+TEMPL_VM_RESOURCE_ENDPOINT = parse.urljoin(TEMPL_VMS_COLLECTION_ENDPOINT, '%s')
 TEMPL_POWERON_ACTION_ENDPOINT = parse.urljoin(
     utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT),
     'actions/poweron/invoke')
@@ -40,22 +43,28 @@ TEMPL_POWERON_ACTION_ENDPOINT = parse.urljoin(
 
 class BaseResourceTestCase(base.BaseTestCase):
 
+    def get_endpoint(self, template, *args):
+        return template % ((self.service_port,) + tuple(args))
+
     def setUp(self):
-        url = parse.urlparse(SERVICE_ENDPOINT)
+        super(BaseResourceTestCase, self).setUp()
+        self.service_port = random.choice(range(2100, 2200))
+        url = parse.urlparse(self.get_endpoint(TEMPL_SERVICE_ENDPOINT))
         self._service = service.RESTService(bind_host=url.hostname,
                                             bind_port=url.port)
         self._service.start()
 
     def tearDown(self):
+        super(BaseResourceTestCase, self).tearDown()
         self._service.stop()
-        del self._service
 
 
 class TestRootResourceTestCase(BaseResourceTestCase):
 
     def test_get_versions_list(self):
 
-        response = requests.get(ROOT_COLLECTION_ENDPOINT)
+        response = requests.get(self.get_endpoint(
+            TEMPL_ROOT_COLLECTION_ENDPOINT))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), ["v1"])
@@ -65,7 +74,8 @@ class TestVersionsResourceTestCase(BaseResourceTestCase):
 
     def test_get_resources_list(self):
 
-        response = requests.get(V1_COLLECTION_ENDPOINT)
+        response = requests.get(
+            self.get_endpoint(TEMPL_V1_COLLECTION_ENDPOINT))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), ["vms"])
@@ -102,9 +112,10 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "name": "test",
             "state": "off"
         }
-        LOCATION = TEMPL_VM_RESOURCE_ENDPOINT % RESOURCE_ID
+        LOCATION = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT, RESOURCE_ID)
 
-        response = requests.post(VMS_COLLECTION_ENDPOINT, json=vm_request_body)
+        response = requests.post(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT), json=vm_request_body)
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.headers['location'], LOCATION)
@@ -118,9 +129,10 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "name": "test",
             "state": "off"
         }
-        VM_RESOURCE_ENDPOINT = TEMPL_VM_RESOURCE_ENDPOINT % RESOURCE_ID
+        VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                            RESOURCE_ID)
 
-        response = requests.get(VM_RESOURCE_ENDPOINT)
+        response = requests.get(VM_RES_ENDPOINT)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
@@ -136,9 +148,10 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "name": "new",
             "state": "off"
         }
-        VM_RESOURCE_ENDPOINT = TEMPL_VM_RESOURCE_ENDPOINT % RESOURCE_ID
+        VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                            RESOURCE_ID)
 
-        response = requests.put(VM_RESOURCE_ENDPOINT, json=vm_request_body)
+        response = requests.put(VM_RES_ENDPOINT, json=vm_request_body)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
@@ -147,9 +160,10 @@ class TestVMResourceTestCase(BaseResourceTestCase):
         RESOURCE_ID = "00000000-0000-0000-0000-000000000001"
         self._insert_vm_to_db(uuid=RESOURCE_ID, name="test", state="off")
 
-        VM_RESOURCE_ENDPOINT = TEMPL_VM_RESOURCE_ENDPOINT % RESOURCE_ID
+        VM_RES_ENDPOINT = self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                            RESOURCE_ID)
 
-        response = requests.delete(VM_RESOURCE_ENDPOINT)
+        response = requests.delete(VM_RES_ENDPOINT)
 
         self.assertEqual(response.status_code, 204)
         self.assertFalse(self._vm_exists_in_db(RESOURCE_ID))
@@ -162,9 +176,10 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "name": "test",
             "state": "on"
         }
-        POWERON_ACTION_ENDPOINT = TEMPL_POWERON_ACTION_ENDPOINT % RESOURCE_ID
+        POWERON_ACT_ENDPOINT = self.get_endpoint(TEMPL_POWERON_ACTION_ENDPOINT,
+                                                 RESOURCE_ID)
 
-        response = requests.post(POWERON_ACTION_ENDPOINT)
+        response = requests.post(POWERON_ACT_ENDPOINT)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
@@ -184,7 +199,8 @@ class TestVMResourceTestCase(BaseResourceTestCase):
             "state": "on"
         }]
 
-        response = requests.get(VMS_COLLECTION_ENDPOINT)
+        response = requests.get(self.get_endpoint(
+            TEMPL_VMS_COLLECTION_ENDPOINT))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)

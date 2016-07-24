@@ -21,7 +21,6 @@ import uuid
 import sqlalchemy as sa
 from sqlalchemy import orm
 
-from restalchemy.tests.functional.restapi.sa_based.microservice import models
 
 _engine = None
 _session_maker = None

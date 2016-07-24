@@ -43,7 +43,9 @@ class RESTService(threading.Thread):
 
     def stop(self):
         models.Base.metadata.drop_all(self._engine)
+        self._httpd.server_close()
         self._httpd.shutdown()
+        self.join(timeout=10)
 
 
 def main():
