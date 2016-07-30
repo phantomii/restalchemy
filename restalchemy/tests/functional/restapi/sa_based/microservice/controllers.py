@@ -24,6 +24,7 @@ from restalchemy.tests.functional.restapi.sa_based.microservice import models
 
 class VMController(controllers.Controller):
     """VM controller
+
     Handle POST http://127.0.0.1:8000/v1/vms/
     Handle GET http://127.0.0.1:8000/v1/vms/
     Handle GET http://127.0.0.1:8000/v1/vms/<uuid>
