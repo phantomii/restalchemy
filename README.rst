@@ -48,3 +48,21 @@ Rolled back migrations:
   > downgrade 3st
   > downgrade 2st
   > downgrade 1st
+
+
+Tests
+-----
+
+Run tests for python 2.7
+
+::
+
+  $ tox -e py27
+
+
+Run functional tests (python 2.7)
+
+::
+
+  $ export DATABASE_URI="mysql://test:test@localhost/test"
+  $ tox -e functional
