@@ -16,30 +16,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from restalchemy.common import context
-from restalchemy.tests.functional.restapi.sa_based.microservice import db
+
+from restalchemy.api import middlewares
+from restalchemy.tests.functional.restapi.ra_based.microservice import (
+    contexts)
 
 
-class Context(context.Context):
+class ContextMiddleware(middlewares.ContextMiddleware):
 
-    _Session = None
-    _session = None
-
-    def get_session(self):
-        if self._Session is None:
-            self._Session = db.get_session()
-        return self._Session()
-
-    @property
-    def session(self):
-        if self._session is None:
-            self._session = self.get_session()
-        return self._session
-
-    def release(self):
-        if self._session:
-            self._session.close()
-            self._session = None
-        if self._Session:
-            self._Session.close_all()
-            self._Session = None
+    def process_request(self, req):
+        ctx = contexts.Context()
+        req.context = ctx
+        result = req.get_response(self.application)
+        ctx.release()
+        return result

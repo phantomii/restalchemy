@@ -17,18 +17,18 @@
 #    under the License.
 
 from restalchemy.common import context
-from restalchemy.tests.functional.restapi.sa_based.microservice import db
+from restalchemy.storage.sql import engines
 
 
 class Context(context.Context):
 
-    _Session = None
+    _engine = None
     _session = None
 
     def get_session(self):
-        if self._Session is None:
-            self._Session = db.get_session()
-        return self._Session()
+        if self._engine is None:
+            self._engine = engines.engine_factory.get_engine()
+        return self._engine.get_session()
 
     @property
     def session(self):
@@ -40,6 +40,3 @@ class Context(context.Context):
         if self._session:
             self._session.close()
             self._session = None
-        if self._Session:
-            self._Session.close_all()
-            self._Session = None

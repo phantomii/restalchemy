@@ -16,30 +16,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from restalchemy.common import context
-from restalchemy.tests.functional.restapi.sa_based.microservice import db
+from restalchemy.storage.sql import orm
+from restalchemy.tests.functional.restapi.ra_based.microservice import (
+    models)
 
 
-class Context(context.Context):
-
-    _Session = None
-    _session = None
-
-    def get_session(self):
-        if self._Session is None:
-            self._Session = db.get_session()
-        return self._Session()
-
-    @property
-    def session(self):
-        if self._session is None:
-            self._session = self.get_session()
-        return self._session
-
-    def release(self):
-        if self._session:
-            self._session.close()
-            self._session = None
-        if self._Session:
-            self._Session.close_all()
-            self._Session = None
+class VM(models.VM, orm.SQLStorableMixin):
+    __tablename__ = "vms"
