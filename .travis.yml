@@ -1,10 +1,25 @@
+sudo: false
 language: python
-python:
-  - "2.7"
+python: 2.7
+
+cache: false
+
+services:
+  - mysql
+
+env:
+  - TOX_ENV=py27
+  - TOX_ENV=cover
+  - TOX_ENV=pep8
+  - TOX_ENV=functional
+
+before_install:
+  - mysql -e "create database IF NOT EXISTS test;" -uroot
+
 install:
   - pip install --upgrade pip
-  - pip install .
-  - pip install -r requirements.txt -r test-requirements.txt
+  - pip install tox
+
 script:
-  - nosetests -v
-  - flake8
+  - export DATABASE_URI="mysql://root:@127.0.0.1:/test"
+  - tox -e $TOX_ENV
