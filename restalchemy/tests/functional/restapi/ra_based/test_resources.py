@@ -43,6 +43,10 @@ TEMPL_VM_RESOURCE_ENDPOINT = parse.urljoin(TEMPL_VMS_COLLECTION_ENDPOINT, '%s')
 TEMPL_POWERON_ACTION_ENDPOINT = parse.urljoin(
     utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT),
     'actions/poweron/invoke')
+TEMPL_PORTS_COLLECTION_ENDPOINT = utils.lastslash(parse.urljoin(
+    utils.lastslash(TEMPL_VM_RESOURCE_ENDPOINT), 'ports'))
+TEMPL_PORT_RESOURCE_ENDPOINT = parse.urljoin(TEMPL_PORTS_COLLECTION_ENDPOINT,
+                                             '%s')
 
 
 class BaseResourceTestCase(base.BaseTestCase):
@@ -212,3 +216,139 @@ class TestVMResourceTestCase(BaseResourceTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), vm_response_body)
+
+
+class TestNestedResourceTestCase(BaseResourceTestCase):
+
+    def setUp(self):
+        super(TestNestedResourceTestCase, self).setUp()
+        self.session.execute("""CREATE TABLE IF NOT EXISTS ports (
+            uuid CHAR(36) NOT NULL,
+            mac CHAR(17) NOT NULL,
+            vm CHAR(36) NOT NULL,
+            PRIMARY KEY (uuid),
+            CONSTRAINT FOREIGN KEY ix_vms_uuid (vm) REFERENCES vms (uuid)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;""", None)
+        self.vm1 = models.VM(
+            uuid=pyuuid.UUID("00000000-0000-0000-0000-000000000001"),
+            name="vm1",
+            state="on")
+        self.vm1.save(session=self.session)
+        self.vm2 = models.VM(
+            uuid=pyuuid.UUID("00000000-0000-0000-0000-000000000002"),
+            name="vm2",
+            state="off")
+        self.vm2.save(session=self.session)
+        self.session.commit()
+
+    def tearDown(self):
+        self.session.execute("DROP TABLE IF EXISTS ports;", None)
+        super(TestNestedResourceTestCase, self).tearDown()
+
+    @mock.patch('uuid.uuid4')
+    def test_create_nested_resource_successful(self, uuid4_mock):
+        VM_RESOURCE_ID = pyuuid.UUID("00000000-0000-0000-0000-000000000001")
+        PORT_RESOURCE_ID = pyuuid.UUID("00000000-0000-0000-0000-000000000003")
+        uuid4_mock.return_value = PORT_RESOURCE_ID
+        port_request_body = {
+            "mac": "00:00:00:00:00:03"
+        }
+        port_response_body = {
+            "uuid": str(PORT_RESOURCE_ID),
+            "mac": "00:00:00:00:00:03",
+            "vm": parse.urlparse(
+                self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                  VM_RESOURCE_ID)).path
+        }
+        LOCATION = self.get_endpoint(TEMPL_PORT_RESOURCE_ENDPOINT,
+                                     VM_RESOURCE_ID,
+                                     PORT_RESOURCE_ID)
+
+        response = requests.post(
+            self.get_endpoint(TEMPL_PORTS_COLLECTION_ENDPOINT, VM_RESOURCE_ID),
+            json=port_request_body)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.headers['location'], LOCATION)
+        self.assertEqual(response.json(), port_response_body)
+
+    def test_get_nested_resource_successful(self):
+        VM_RESOURCE_ID = pyuuid.UUID("00000000-0000-0000-0000-000000000001")
+        PORT_RESOURCE_ID = pyuuid.UUID("00000000-0000-0000-0000-000000000003")
+        port = models.Port(uuid=PORT_RESOURCE_ID,
+                           mac="00:00:00:00:00:03",
+                           vm=self.vm1)
+        port.save(session=self.session)
+        self.session.commit()
+        port_response_body = {
+            "uuid": str(PORT_RESOURCE_ID),
+            "mac": "00:00:00:00:00:03",
+            "vm": parse.urlparse(
+                self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                  VM_RESOURCE_ID)).path
+        }
+
+        response = requests.get(
+            self.get_endpoint(TEMPL_PORT_RESOURCE_ENDPOINT,
+                              VM_RESOURCE_ID,
+                              PORT_RESOURCE_ID))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), port_response_body)
+
+    def test_get_ports_collection_successful(self):
+        VM_RESOURCE_ID = pyuuid.UUID("00000000-0000-0000-0000-000000000001")
+        PORT1_RESOURCE_ID = pyuuid.UUID("00000000-0000-0000-0000-000000000003")
+        PORT2_RESOURCE_ID = pyuuid.UUID("00000000-0000-0000-0000-000000000004")
+        PORT3_RESOURCE_ID = pyuuid.UUID("00000000-0000-0000-0000-000000000005")
+        port1 = models.Port(uuid=PORT1_RESOURCE_ID,
+                            mac="00:00:00:00:00:03",
+                            vm=self.vm1)
+        port1.save(session=self.session)
+        port2 = models.Port(uuid=PORT2_RESOURCE_ID,
+                            mac="00:00:00:00:00:04",
+                            vm=self.vm1)
+        port2.save(session=self.session)
+        port3 = models.Port(uuid=PORT3_RESOURCE_ID,
+                            mac="00:00:00:00:00:05",
+                            vm=self.vm2)
+        port3.save(session=self.session)
+        ports_response_body = [{
+            "uuid": str(PORT1_RESOURCE_ID),
+            "mac": "00:00:00:00:00:03",
+            "vm": parse.urlparse(
+                self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                  VM_RESOURCE_ID)).path
+        }, {
+            "uuid": str(PORT2_RESOURCE_ID),
+            "mac": "00:00:00:00:00:04",
+            "vm": parse.urlparse(
+                self.get_endpoint(TEMPL_VM_RESOURCE_ENDPOINT,
+                                  VM_RESOURCE_ID)).path
+        }]
+        self.session.commit()
+
+        response = requests.get(
+            self.get_endpoint(TEMPL_PORTS_COLLECTION_ENDPOINT, VM_RESOURCE_ID))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), ports_response_body)
+
+    def test_delete_nested_resource_successful(self):
+        VM_RESOURCE_ID = pyuuid.UUID("00000000-0000-0000-0000-000000000001")
+        PORT_RESOURCE_ID = pyuuid.UUID("00000000-0000-0000-0000-000000000003")
+        port = models.Port(uuid=PORT_RESOURCE_ID,
+                           mac="00:00:00:00:00:03",
+                           vm=self.vm1)
+        port.save(session=self.session)
+        self.session.commit()
+
+        response = requests.delete(
+            self.get_endpoint(TEMPL_PORT_RESOURCE_ENDPOINT,
+                              VM_RESOURCE_ID,
+                              PORT_RESOURCE_ID))
+
+        self.assertEqual(response.status_code, 204)
+        self.assertRaises(exceptions.RecordNotFound,
+                          models.Port.objects.get_one,
+                          filters={'uuid': PORT_RESOURCE_ID})

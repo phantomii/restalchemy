@@ -16,6 +16,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from restalchemy.dm import relationships
 from restalchemy.storage.sql import orm
 from restalchemy.tests.functional.restapi.ra_based.microservice import (
     models)
@@ -23,3 +24,9 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import (
 
 class VM(models.VM, orm.SQLStorableMixin):
     __tablename__ = "vms"
+
+
+class Port(models.Port, orm.SQLStorableMixin):
+    __tablename__ = "ports"
+
+    vm = relationships.relationship(VM, required=True)
