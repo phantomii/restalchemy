@@ -25,7 +25,52 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import (
     storable_models as models)
 
 
-class VMController(controllers.Controller):
+class BaseController(controllers.Controller):
+
+    def _get_session(self):
+        ctx = self.get_context()
+        return ctx.session
+
+
+class PortController(BaseController):
+    """Port controller
+
+    Handle POST http://127.0.0.1:8000/v1/vms/<vm_uuid>/ports/
+    Handle GET http://127.0.0.1:8000/v1/vms/<vm_uuid>/ports/
+    Handle GET http://127.0.0.1:8000/v1/vms/<vm_uuid>/ports/<port_uuid>
+    Handle DELETE http://127.0.0.1:8000/v1/vms/<vm_uuid>/ports/<port_uuid>
+    """
+
+    __resource__ = resources.ResourceByRAModel(models.Port)
+
+    def create(self, parent_resource, **kwargs):
+        session = self._get_session()
+        port = self.model(vm=parent_resource, **kwargs)
+        port.save(session=session)
+        session.commit()
+        return port
+
+    def filter(self, parent_resource):
+        session = self._get_session()
+        ports = self.model.objects.get_all(filters={'vm': parent_resource},
+                                           session=session)
+        return ports
+
+    def get(self, parent_resource, uuid):
+        session = self._get_session()
+        port = self.model.objects.get_one(filters={'vm': parent_resource,
+                                                   'uuid': pyuuid.UUID(uuid)},
+                                          session=session)
+        return port
+
+    def delete(self, parent_resource, uuid):
+        session = self._get_session()
+        port = self.get(parent_resource, uuid)
+        port.delete(session=session)
+        session.commit()
+
+
+class VMController(BaseController):
     """VM controller
 
     Handle POST http://127.0.0.1:8000/v1/vms/
@@ -38,10 +83,6 @@ class VMController(controllers.Controller):
     """
 
     __resource__ = resources.ResourceByRAModel(models.VM)
-
-    def _get_session(self):
-        ctx = self.get_context()
-        return ctx.session
 
     def create(self, name):
         session = self._get_session()

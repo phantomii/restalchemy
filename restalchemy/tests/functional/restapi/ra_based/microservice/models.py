@@ -18,6 +18,7 @@
 
 from restalchemy.dm import models
 from restalchemy.dm import properties
+from restalchemy.dm import relationships
 from restalchemy.dm import types
 
 
@@ -26,3 +27,9 @@ class VM(models.ModelWithUUID):
     state = properties.property(types.String(max_length=10), required=True,
                                 default="off")
     name = properties.property(types.String(max_length=255), required=True)
+
+
+class Port(models.ModelWithUUID):
+
+    mac = properties.property(types.Mac, default='00:00:00:00:00:00')
+    vm = relationships.relationship(VM, required=True)

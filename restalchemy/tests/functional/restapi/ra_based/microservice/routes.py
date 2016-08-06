@@ -20,6 +20,12 @@ from restalchemy.tests.functional.restapi.ra_based.microservice import (
     controllers)
 
 
+class PortRoute(routes.Route):
+    __controller__ = controllers.PortController
+    __allow_methods__ = [routes.CREATE, routes.FILTER, routes.GET,
+                         routes.DELETE]
+
+
 class VMPowerOnAction(routes.Action):
     __controller__ = controllers.VMController
 
@@ -35,6 +41,7 @@ class VMRoute(routes.Route):
 
     poweron = routes.action(VMPowerOnAction, invoke=True)
     poweroff = routes.action(VMPowerOffAction, invoke=True)
+    ports = routes.route(PortRoute, resource_route=True)
 
 
 class V1Route(routes.Route):
