@@ -17,6 +17,7 @@
 #    under the License.
 
 import contextlib
+import logging
 
 
 class MySQLSession(object):
@@ -24,8 +25,11 @@ class MySQLSession(object):
     def __init__(self, conn):
         self._conn = conn
         self._cursor = conn.cursor(dictionary=True)
+        self._log = logging.getLogger(__name__)
 
     def execute(self, statement, values):
+        self._log.debug("Execute statement %s with values %s",
+                        statement, values)
         self._cursor.execute(statement, values)
         return self._cursor
 

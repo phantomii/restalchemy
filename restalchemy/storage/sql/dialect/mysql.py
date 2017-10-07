@@ -55,8 +55,8 @@ class MySQLInsert(AbstractDialectCommand):
         return values
 
     def get_statement(self):
-        column_names = self._table.get_column_names()
-        return "INSERT INTO %s (%s) VALUES (%s)" % (
+        column_names = self._table.get_escaped_column_names()
+        return "INSERT INTO `%s` (%s) VALUES (%s)" % (
             self._table.name,
             ", ".join(column_names),
             ", ".join(['%s'] * len(column_names))
@@ -80,9 +80,9 @@ class MySQLUpdate(AbstractDialectCommand):
         return values
 
     def get_statement(self):
-        column_names = self._table.get_column_names(with_pk=False)
-        pk_names = self._table.get_pk_names()
-        return "UPDATE %s SET %s WHERE %s" % (
+        column_names = self._table.get_escaped_column_names(with_pk=False)
+        pk_names = self._table.get_escaped_pk_names()
+        return "UPDATE `%s` SET %s WHERE %s" % (
             self._table.name,
             ", ".join(["%s = %s" % (name, "%s") for name in column_names]),
             ", ".join(["%s = %s" % (name, "%s") for name in pk_names])
@@ -103,8 +103,8 @@ class MySQLDelete(AbstractDialectCommand):
         return values
 
     def get_statement(self):
-        pk_names = self._table.get_pk_names()
-        return "DELETE FROM %s WHERE %s" % (
+        pk_names = self._table.get_escaped_pk_names()
+        return "DELETE FROM `%s` WHERE %s" % (
             self._table.name,
             ", ".join(["%s = %s" % (name, "%s") for name in pk_names])
         )
@@ -127,11 +127,11 @@ class MySQLSelect(AbstractDialectCommand):
         return [self._filters[key] for key in sorted(self._filters.keys())]
 
     def get_statement(self):
-        sql = "SELECT %s FROM %s" % (
-            ", ".join(self._table.get_column_names()),
+        sql = "SELECT %s FROM `%s`" % (
+            ", ".join(self._table.get_escaped_column_names()),
             self._table.name
         )
-        filt = " AND ".join(["%s = %s" % (param, "%s")
+        filt = " AND ".join(["`%s` = %s" % (param, "%s")
                              for param in sorted(self._filters.keys())])
         return sql + " WHERE %s" % filt if filt else sql
 

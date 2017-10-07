@@ -91,6 +91,10 @@ for key in sorted(ROW.keys()):
     VALUES += (ROW[key],)
 
 
+def escape(list_of_fields):
+    return ["`%s`" % field for field in list_of_fields]
+
+
 class InsertCase(unittest.TestCase):
 
     @mock.patch('mysql.connector.pooling.MySQLConnectionPool')
@@ -112,8 +116,8 @@ class InsertCase(unittest.TestCase):
         self.target_model.insert()
 
         session_mock().execute.assert_called_once_with(
-            "INSERT INTO %s (%s) VALUES (%s)" % (
-                FAKE_TABLE_NAME1, ", ".join(COLUMNS_NAME),
+            "INSERT INTO `%s` (%s) VALUES (%s)" % (
+                FAKE_TABLE_NAME1, ", ".join(escape(COLUMNS_NAME)),
                 ", ".join(["%s"] * len(VALUES))),
             VALUES
         )
@@ -142,8 +146,8 @@ class InsertCase(unittest.TestCase):
         self.target_model.insert(session=session_mock)
 
         session_mock.execute.assert_called_once_with(
-            "INSERT INTO %s (%s) VALUES (%s)" % (
-                FAKE_TABLE_NAME1, ", ".join(COLUMNS_NAME),
+            "INSERT INTO `%s` (%s) VALUES (%s)" % (
+                FAKE_TABLE_NAME1, ", ".join(escape(COLUMNS_NAME)),
                 ", ".join(["%s"] * len(VALUES))),
             VALUES
         )

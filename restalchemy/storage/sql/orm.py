@@ -24,12 +24,13 @@ from restalchemy.storage import base
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import sessions
+from restalchemy.storage.sql import utils
 
 
-class SQLiteTable(object):
+class SQLTable(object):
 
     def __init__(self, table_name, model):
-        super(SQLiteTable, self).__init__()
+        super(SQLTable, self).__init__()
         self._table_name = table_name
         self._model = model
 
@@ -43,6 +44,10 @@ class SQLiteTable(object):
             result.sort()
         return result
 
+    def get_escaped_column_names(self, with_pk=True, do_sort=True):
+        return [utils.escape(column_name) for column_name in
+                self.get_column_names(with_pk=with_pk, do_sort=do_sort)]
+
     def get_pk_names(self, do_sort=True):
         result = []
         for name, prop in self._model.properties.items():
@@ -51,6 +56,10 @@ class SQLiteTable(object):
         if do_sort:
             result.sort()
         return result
+
+    def get_escaped_pk_names(self, do_sort=True):
+        return [utils.escape(column_name) for column_name in self.get_pk_names(
+            do_sort=do_sort)]
 
     @property
     def name(self):
@@ -77,8 +86,8 @@ class ObjectCollection(base.AbstractObjectCollection):
 
     @property
     def _table(self):
-        return SQLiteTable(table_name=self.model_cls.__tablename__,
-                           model=self.model_cls)
+        return SQLTable(table_name=self.model_cls.__tablename__,
+                        model=self.model_cls)
 
     @property
     def _engine(self):
@@ -128,7 +137,7 @@ class SQLStorableMixin(base.AbstractStorableMixin):
 
     @property
     def _table(self):
-        return SQLiteTable(table_name=self.__tablename__, model=self)
+        return SQLTable(table_name=self.__tablename__, model=self)
 
     @property
     def _engine(self):
