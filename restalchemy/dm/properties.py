@@ -39,6 +39,10 @@ class AbstractProperty(object):
     def set_value_force(self, value):
         pass
 
+    @abc.abstractmethod
+    def is_dirty(self):
+        pass
+
 
 class BaseProperty(AbstractProperty):
     pass
@@ -54,6 +58,10 @@ class Property(BaseProperty):
         self._read_only = bool(read_only)
         default = default() if callable(default) else default
         self.set_value_force(value if value is not None else default)
+        self.__first_value = self.value
+
+    def is_dirty(self):
+        return not self.__first_value == self.value
 
     def _safe_value(self, value):
         if value is None or self._type.validate(value):

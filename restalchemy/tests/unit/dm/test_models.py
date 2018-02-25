@@ -106,7 +106,7 @@ class Model2(models.Model):
     pass
 
 
-class Model3(models.Model):
+class Model3(models.ModelWithUUID):
     pass
 
 
@@ -140,3 +140,38 @@ class InheritModelTestCase(base.BaseTestCase):
         self.assertEqual(props['property2']._property_type, types.Integer)
         self.assertEqual(props['property3']._property_type, Model3)
         self.assertEqual(props['property4']._property_type, Model2)
+
+
+class DirtyModelTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        super(DirtyModelTestCase, self).setUp()
+        self._model = TestModel(
+            property1="fake_string",
+            property2=2,
+            property3=Model3(),
+            property4=Model2())
+
+    def test_dirty_is_false(self):
+        self.assertFalse(self._model.is_dirty())
+
+    def test_dirty_is_false_after_change_property2(self):
+        self._model.property2 = 6
+        self._model.property2 = 2
+
+        self.assertFalse(self._model.is_dirty())
+
+    def test_property1_is_dirty(self):
+        self._model.property1 = "new fake_string"
+
+        self.assertTrue(self._model.is_dirty())
+
+    def test_property3_is_dirty(self):
+        self._model.property3 = Model3()
+
+        self.assertTrue(self._model.is_dirty())
+
+    def test_property3_is_not_dirty(self):
+        self._model.property3 = Model3(uuid=self._model.property3.uuid)
+
+        self.assertFalse(self._model.is_dirty())

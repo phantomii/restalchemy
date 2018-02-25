@@ -128,6 +128,12 @@ class Model(collections.Mapping):
                 result[name] = prop
         return result
 
+    def is_dirty(self):
+        for prop in self.properties.values():
+            if prop.is_dirty():
+                return True
+        return False
+
     def __getitem__(self, name):
         return self.properties[name].value
 

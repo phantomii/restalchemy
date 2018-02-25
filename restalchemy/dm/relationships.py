@@ -44,6 +44,10 @@ class Relationship(BaseRelationship):
             self._default = (default()) if callable(
                 default) else self._safe_value(default)
         self._value = value
+        self.__first_value = self.value
+
+    def is_dirty(self):
+        return not self.__first_value == self.value
 
     def _safe_value(self, value):
         if value is None or isinstance(value, self._type):
