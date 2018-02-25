@@ -253,7 +253,7 @@ class PropertyManagerTestCase(base.BaseTestCase):
 
     def setUp(self):
         self.collection_mock = mock.Mock(**{
-            'properties.iteritems.return_value': [
+            'properties.items.return_value': [
                 ('fake1', 'fake1'),
                 ('fake2', 'fake2')
             ],

@@ -16,7 +16,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import __builtin__
 import abc
 import collections
 import copy
@@ -26,6 +25,7 @@ from restalchemy.common import exceptions as exc
 from restalchemy.common import utils
 
 import six
+from six.moves import builtins
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -81,7 +81,7 @@ class Property(BaseProperty):
     def is_id_property(cls):
         return False
 
-    @__builtin__.property
+    @builtins.property
     def value(self):
         return self._value
 
@@ -151,7 +151,7 @@ class PropertyCollection(PropertyMapping):
     def __getitem__(self, name):
         return self.properties[name].get_property_class()
 
-    @__builtin__.property
+    @builtins.property
     def properties(self):
         return utils.ReadOnlyDictProxy(self._properties)
 
@@ -174,7 +174,7 @@ class PropertyManager(PropertyMapping):
 
     def __init__(self, property_collection, **kwargs):
         self._properties = {}
-        for name, item in property_collection.properties.iteritems():
+        for name, item in property_collection.properties.items():
             if isinstance(item, PropertyCollection):
                 prop = PropertyManager(item, **kwargs.pop(name, {}))
             else:
@@ -191,11 +191,11 @@ class PropertyManager(PropertyMapping):
 #            raise TypeError("Unknown parameters: %s" % str(kwargs))
         super(PropertyManager, self).__init__()
 
-    @__builtin__.property
+    @builtins.property
     def properties(self):
         return utils.ReadOnlyDictProxy(self._properties)
 
-    @__builtin__.property
+    @builtins.property
     def value(self):
         result = {}
         for k, v in self.properties.iteritems():
