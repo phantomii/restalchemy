@@ -16,6 +16,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+pass
+
 # TODO(Eugene Frolov): Rewrite tests
 
 # import mock

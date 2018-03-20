@@ -57,7 +57,7 @@ class BaseResourcePacker(object):
 
     def pack(self, obj):
         if (isinstance(obj, list) or
-            isinstance(obj, types.GeneratorType)):
+                isinstance(obj, types.GeneratorType)):
             return [self.pack_resource(resource) for resource in obj]
         else:
             return self.pack_resource(obj)

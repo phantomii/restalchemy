@@ -220,6 +220,7 @@ class VM(Base):
         self.name = name
         self.state = state
 
+
 # SetUp SQLAlchemy
 ENGINE = sa.create_engine(DATABASE_URL, echo=True)
 Base.metadata.create_all(ENGINE)
@@ -232,6 +233,7 @@ SESSION = SESSION_MAKER()
 # -----------------------------------------------------------------------------
 class VMController(controllers.Controller):
     """VM controller
+
     Handle POST http://127.0.0.1:8000/vms/
     Handle GET http://127.0.0.1:8000/vms/
     Handle GET http://127.0.0.1:8000/vms/<uuid>
@@ -324,6 +326,7 @@ def main():
         server.serve_forever()
     except KeyboardInterrupt:
         six.print_('Bye')
+
 
 if __name__ == '__main__':
     main()

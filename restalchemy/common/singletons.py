@@ -16,7 +16,8 @@
 
 
 class MetaSingleton(type):
-    """
+    """Meta Singleton
+
     For example:
 
     >>> class ConcreteSingleton:
@@ -32,7 +33,8 @@ class MetaSingleton(type):
 
 
 class InheritSingleton(object):
-    """
+    """Inherit Singleton
+
     For example:
 
     >>> class ConcreteSingleton(InheritSingleton):
