@@ -17,10 +17,10 @@
 #    under the License.
 
 import abc
-import urlparse
 
 from mysql.connector import pooling
 import six
+from six.moves.urllib import parse
 
 from restalchemy.common import singletons
 from restalchemy.storage.sql.dialect import mysql
@@ -36,7 +36,7 @@ class AbstractEngine(object):
 
     def __init__(self, db_url):
         super(AbstractEngine, self).__init__()
-        self._db_url = urlparse.urlparse(db_url)
+        self._db_url = parse.urlparse(db_url)
 
     @abc.abstractproperty
     def db_name(self):
