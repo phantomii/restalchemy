@@ -16,9 +16,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import anyjson
 import copy
+import json
 import types
+
+import six
 
 
 DEFAULT_CONTENT_TYPE = 'application/json'
@@ -35,15 +37,8 @@ class BaseResourcePacker(object):
         self._req = request
 
     def pack_resource(self, obj):
-        if isinstance(obj, (types.StringTypes,
-                            types.IntType,
-                            types.LongType,
-                            types.FloatType,
-                            types.BooleanType,
-                            types.NoneType,
-                            types.ListType,
-                            types.TupleType,
-                            types.DictType)):
+        if isinstance(obj, six.string_types + six.integer_types + (
+                float, bool, type(None), list, tuple, dict)):
             return obj
         else:
             result = {}
@@ -82,10 +77,10 @@ class BaseResourcePacker(object):
 class JSONPacker(BaseResourcePacker):
 
     def pack(self, obj):
-        return anyjson.serialize(super(JSONPacker, self).pack(obj))
+        return json.dumps(super(JSONPacker, self).pack(obj))
 
     def unpack(self, value):
-        return super(JSONPacker, self).unpack(anyjson.deserialize(value))
+        return super(JSONPacker, self).unpack(json.loads(value))
 
 
 packer_mapping = {

@@ -162,9 +162,9 @@ class Route(BaseRoute):
                 uri_pieces = uri.split('/')[1:]
                 if len(uri_pieces) == len(self.path_stack):
                     for piece1, piece2 in zip(uri_pieces, self.path_stack):
-                        if ((isinstance(piece2, basestring) and
+                        if ((isinstance(piece2, six.string_types) and
                                 piece1 == piece2) or (
-                                not isinstance(piece2, basestring))):
+                                not isinstance(piece2, six.string_types))):
                             continue
                         return False
                     return True
@@ -189,7 +189,7 @@ class Route(BaseRoute):
                 resource = self.path_stack[-1]
                 path = str(resource.get_resource_id(model))
                 for piece in reversed(self.path_stack[:-1]):
-                    if isinstance(piece, basestring):
+                    if isinstance(piece, six.string_types):
                         path = posixpath.join(piece, path)
                     else:
                         model = self.get_parent_model(piece.get_model(),

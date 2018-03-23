@@ -179,7 +179,7 @@ class AbstractResource(object):
 class ResourceByRAModel(AbstractResource):
 
     def get_fields(self):
-        for name, prop in self._model_class.properties.iteritems():
+        for name, prop in self._model_class.properties.items():
             if issubclass(prop, ra_properties.BaseProperty):
                 prop = ResourceRAProperty(
                     resource=self,
