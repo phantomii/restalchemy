@@ -80,6 +80,9 @@ class JSONPacker(BaseResourcePacker):
         return json.dumps(super(JSONPacker, self).pack(obj))
 
     def unpack(self, value):
+        if (six.PY3 and isinstance(value, six.binary_type)):
+            return super(JSONPacker, self).unpack(
+                json.loads(str(value, 'utf-8')))
         return super(JSONPacker, self).unpack(json.loads(value))
 
 
