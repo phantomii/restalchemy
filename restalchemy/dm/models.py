@@ -149,7 +149,7 @@ class Model(collections.Mapping):
 
     def __repr__(self):
         result = []
-        for k, v in self.iteritems():
+        for k, v in self.items():
             result.append('%s: %s' % (k, v))
         result = ', '.join(result)
         return '<%s {%s}>' % (self.__class__.__name__, result)
@@ -164,8 +164,8 @@ class ModelWithUUID(Model):
         if len(properties) == 1:
             return self.uuid
         raise TypeError("Model %s has many properties which marked as "
-                        "id_property. Please implement get_id method on your "
-                        "model." % type(self))
+                        "id_property. Please implement get_id and __hash__ "
+                        "method on your model." % type(self))
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -174,3 +174,6 @@ class ModelWithUUID(Model):
 
     def __ne__(self, other):
         return not self == other
+
+    def __hash__(self):
+        return hash(str(self.get_id()))

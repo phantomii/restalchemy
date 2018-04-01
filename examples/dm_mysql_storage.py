@@ -16,6 +16,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from restalchemy.dm import models
 from restalchemy.dm import properties
 from restalchemy.dm import relationships
@@ -64,9 +66,9 @@ foo1.save()
 bar1 = BarModel(bar_field1="test", foo=foo1)
 bar1.save()
 
-print list(BarModel.objects.get_all())
-print BarModel.objects.get_one(filters={"uuid": bar1.get_id()})
-print list(BarModel.objects.get_all(filters={"foo": foo1}))
+six.print_(list(BarModel.objects.get_all()))
+six.print_(BarModel.objects.get_one(filters={"uuid": bar1.get_id()}))
+six.print_(list(BarModel.objects.get_all(filters={"foo": foo1})))
 
 bar1.delete()
 
@@ -75,9 +77,9 @@ foo2 = FooModel(foo_field1=11,
 foo2.save()
 
 foos = list(FooModel.objects.get_all())
-print foos
+six.print_(foos)
 
-print FooModel.objects.get_one(filters={'foo_field1': 10})
+six.print_(FooModel.objects.get_one(filters={'foo_field1': 10}))
 
 # Modify foo_field2 and update it in storage
 foo2.foo_field2 = 'xxx2 asdad asdasd'

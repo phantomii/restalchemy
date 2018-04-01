@@ -16,6 +16,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from restalchemy.storage.sql import migrations
 
 
@@ -29,10 +31,10 @@ class MigrationStep(migrations.AbstarctMigrationStep):
         return "08ebff76-c811-4e4d-81a4-ca067ee54ed3"
 
     def upgrade(self, session):
-        print "upgrade 3st"
+        six.print_("upgrade 3st")
 
     def downgrade(self, session):
-        print "downgrade 3st"
+        six.print_("downgrade 3st")
 
 
 migration_step = MigrationStep()

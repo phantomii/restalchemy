@@ -35,3 +35,7 @@ class HasManyRecords(exceptions.RestAlchemyException):
 
     message = ("Has many records in storage for model (%(model)s) and filters "
                "(%(filters)s).")
+
+
+class ConflictRecords(exceptions.RestAlchemyException):
+    message = "'%(model)s' has already inserted in to memory storage"
