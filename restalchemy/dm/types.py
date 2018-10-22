@@ -133,7 +133,6 @@ class Dict(BasePythonType):
         super(Dict, self).__init__(dict)
 
 
-# TODO(efrolov): Make converters to convert Enum type to storable type
 class Enum(BaseType):
 
     def __init__(self, enum_values):
@@ -143,12 +142,11 @@ class Enum(BaseType):
     def validate(self, value):
         return value in self._enums_values
 
-    # TODO(efrolov): Fix converters
     def to_simple_type(self, value):
-        return self._enums_values
+        return value
 
     def from_simple_type(self, value):
-        return self._enums_values
+        return value
 
 
 class BaseRegExpType(BaseType):
