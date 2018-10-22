@@ -40,7 +40,11 @@ class Controller(object):
 
         def correct(body, c=status_code, h={}, *args):
             if add_location:
-                headers['Location'] = resources.ResourceMap.get_location(body)
+                try:
+                    headers['Location'] = resources.ResourceMap.get_location(
+                        body)
+                except ValueError:
+                    headers['Location'] = 'unknown'
             headers.update(h)
             return body, c, headers
 
