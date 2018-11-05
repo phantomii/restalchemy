@@ -23,6 +23,7 @@ from restalchemy.dm import properties
 from restalchemy.dm import relationships
 from restalchemy.dm import types
 from restalchemy.storage.sql import engines
+from restalchemy.storage.sql import filters
 from restalchemy.storage.sql import orm
 
 
@@ -56,7 +57,7 @@ class BarModel(models.ModelWithUUID, orm.SQLStorableMixin):
 
 
 engines.engine_factory.configure_factory(
-    db_url="mysql://test:OyO83AdIn9hbK3uz@cameron.synapse.net.ru/test")
+    db_url="mysql://test:test@127.0.0.1/test")
 
 
 # Create new foo object and store it
@@ -88,3 +89,15 @@ foo2.save()
 # Delete foo object from storage
 for foo in foos:
     foo.delete()
+
+
+six.print_("foo_field1 is greater than 5")
+for num in range(10):
+    foo = FooModel(foo_field1=num)
+    foo.save()
+
+six.print_(list(FooModel.objects.get_all(filters={
+    'foo_field1': filters.GT(5)})))
+
+for model in FooModel.objects.get_all():
+    model.delete()
