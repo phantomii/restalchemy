@@ -17,6 +17,7 @@
 #    under the License.
 
 from restalchemy.storage.sql.dialect import base
+from restalchemy.storage.sql import filters
 
 
 class MySQLProcessResult(base.AbstractProcessResult):
@@ -124,15 +125,29 @@ class MySQLSelect(AbstractDialectCommand):
                 result, filters))
 
     def get_values(self):
-        return [self._filters[key] for key in sorted(self._filters.keys())]
+        values = []
+        for key in sorted(self._filters.keys()):
+            value = self._filters[key]
+            if isinstance(value, filters.AbstractExpression):
+                values.append(value.value)
+            else:
+                values.append(value)
+        return values
+
+    def construct_where(self):
+        where_list = []
+        for name, value in sorted(self._filters.items()):
+            if not isinstance(value, filters.AbstractExpression):
+                value = filters.EQ(value)
+            where_list.append(value.construct_expression(name))
+        return " AND ".join(where_list)
 
     def get_statement(self):
         sql = "SELECT %s FROM `%s`" % (
             ", ".join(self._table.get_escaped_column_names()),
             self._table.name
         )
-        filt = " AND ".join(["`%s` = %s" % (param, "%s")
-                             for param in sorted(self._filters.keys())])
+        filt = self.construct_where()
         return sql + " WHERE %s" % filt if filt else sql
 
 
