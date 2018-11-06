@@ -68,6 +68,15 @@ class LocatorNotFound(NotFoundError):
                "Thus resource could not be found. ")
 
 
+class UnknownResourceLocation(NotFoundError):
+    message = ("Can not construct resource location for resource %(resource)r "
+               "because the resource can't be got using REST API")
+
+
+class CanNotFindResourceByModel(NotFoundError):
+    message = "Can not find a resource by model (%(model)r)"
+
+
 class IncorrectRouteAttributeClass(NotFoundError):
     message = "Route %(route)s is of unacceptable class"
 

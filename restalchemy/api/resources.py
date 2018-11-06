@@ -37,6 +37,8 @@ class ResourceMap(object):
     @classmethod
     def get_location(cls, model):
         resource = cls.get_resource_by_model(model)
+        if resource not in cls.resource_map:
+            raise exc.UnknownResourceLocation(resource=resource)
         return cls.resource_map[resource].get_uri(model)
 
     @classmethod
@@ -69,7 +71,7 @@ class ResourceMap(object):
         try:
             return self.model_to_resource[model_class]
         except KeyError:
-            raise ValueError("Can't find resource by model (%s)" % model)
+            raise exc.CanNotFindResourceByModel(model=model)
 
 
 @six.add_metaclass(abc.ABCMeta)
