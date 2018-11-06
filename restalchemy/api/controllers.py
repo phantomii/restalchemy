@@ -16,11 +16,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
+
 import webob
 
 from restalchemy.api import packers
 from restalchemy.api import resources
 from restalchemy.common import exceptions as exc
+
+
+LOG = logging.getLogger(__name__)
 
 
 class Controller(object):
@@ -43,8 +48,11 @@ class Controller(object):
                 try:
                     headers['Location'] = resources.ResourceMap.get_location(
                         body)
-                except ValueError:
-                    headers['Location'] = 'unknown'
+                except (exc.UnknownResourceLocation,
+                        exc.CanNotFindResourceByModel) as e:
+                    LOG.warning(
+                        "Can't construct location header by reason: %r",
+                        e)
             headers.update(h)
             return body, c, headers
 
