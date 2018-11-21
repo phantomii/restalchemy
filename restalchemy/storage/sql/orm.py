@@ -23,6 +23,7 @@ import six
 from restalchemy.storage import base
 from restalchemy.storage import exceptions
 from restalchemy.storage.sql import engines
+from restalchemy.storage.sql import filters as flt
 from restalchemy.storage.sql import sessions
 from restalchemy.storage.sql import utils
 
@@ -98,8 +99,9 @@ class ObjectCollection(base.AbstractObjectCollection):
         #                location.
         result = {}
         for name, value in filters.items():
-            result[name] = (self.model_cls.properties.properties[name]
-                            .get_property_type().to_simple_type(value))
+            result[name] = (value if isinstance(value, flt.AbstractExpression)
+                            else (self.model_cls.properties.properties[name]
+                                  .get_property_type().to_simple_type(value)))
         return result
 
     def get_all(self, filters=None, session=None):
