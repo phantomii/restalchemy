@@ -112,3 +112,33 @@ class LETestCase(base.BaseTestCase):
 
     def test_value_property(self):
         self.assertEqual(self._expr.value, TEST_VALUE)
+
+
+class IsTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        self._expr = filters.Is(value=TEST_VALUE)
+
+    def test_construct_expression(self):
+
+        result = self._expr.construct_expression(name=TEST_NAME)
+
+        self.assertEqual(result, '`' + TEST_NAME + '` IS %s')
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, TEST_VALUE)
+
+
+class IsNotTestCase(base.BaseTestCase):
+
+    def setUp(self):
+        self._expr = filters.IsNot(value=TEST_VALUE)
+
+    def test_construct_expression(self):
+
+        result = self._expr.construct_expression(name=TEST_NAME)
+
+        self.assertEqual(result, '`' + TEST_NAME + '` IS NOT %s')
+
+    def test_value_property(self):
+        self.assertEqual(self._expr.value, TEST_VALUE)

@@ -71,3 +71,15 @@ class LE(AbstractExpression):
 
     def construct_expression(self, name):
         return ("`%s` <= " % name) + "%s"
+
+
+class Is(AbstractExpression):
+
+    def construct_expression(self, name):
+        return ("`%s` IS " % name) + "%s"
+
+
+class IsNot(AbstractExpression):
+
+    def construct_expression(self, name):
+        return ("`%s` IS NOT " % name) + "%s"
