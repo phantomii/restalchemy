@@ -32,7 +32,9 @@ class Collection(object):
 
     def insert(self, model):
         if model in self._models:
-            raise exceptions.ConflictRecords(model=model)
+            raise exceptions.ConflictRecords(
+                model=model,
+                msg="Model with %d id already inserterd" % id(model))
         self._models.append(model)
 
     def update(self, model):

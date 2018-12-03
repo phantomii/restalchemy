@@ -38,4 +38,4 @@ class HasManyRecords(exceptions.RestAlchemyException):
 
 
 class ConflictRecords(exceptions.RestAlchemyException):
-    message = "'%(model)s' has already inserted in to memory storage"
+    message = "Duplicate parameters for '%(model)s'. Original message: %(msg)s"
