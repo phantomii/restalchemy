@@ -16,7 +16,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import absolute_import  # noqa
+
+from mysql.connector import errors
+
 from restalchemy.storage.sql.dialect import base
+from restalchemy.storage.sql.dialect import exceptions as exc
 from restalchemy.storage.sql import filters
 
 
@@ -43,8 +48,13 @@ class MySQLProcessResult(base.AbstractProcessResult):
 class AbstractDialectCommand(base.AbstractDialectCommand):
 
     def execute(self, session):
-        return MySQLProcessResult(
-            super(AbstractDialectCommand, self).execute(session))
+        try:
+            return MySQLProcessResult(
+                super(AbstractDialectCommand, self).execute(session))
+        except errors.IntegrityError as e:
+            if e.errno == 1062:
+                raise exc.Conflict(code=e.sqlstate, message=e.msg)
+            raise
 
 
 class MySQLInsert(AbstractDialectCommand):

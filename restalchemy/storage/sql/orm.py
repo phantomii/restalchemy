@@ -22,6 +22,7 @@ import six
 
 from restalchemy.storage import base
 from restalchemy.storage import exceptions
+from restalchemy.storage.sql.dialect import exceptions as exc
 from restalchemy.storage.sql import engines
 from restalchemy.storage.sql import filters as flt
 from restalchemy.storage.sql import sessions
@@ -159,10 +160,13 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     def insert(self, session=None):
         # TODO(efrolov): Add filters arameters.
         with sessions.session_manager(self._engine, session) as s:
-            self._table.insert(engine=self._engine,
-                               data=self._get_prepared_data(),
-                               session=s)
-            # TODO(efrolov): Check result
+            try:
+                self._table.insert(engine=self._engine,
+                                   data=self._get_prepared_data(),
+                                   session=s)
+                # TODO(efrolov): Check result
+            except exc.Conflict as e:
+                raise exceptions.ConflictRecords(model=self, msg=e.message)
             self._saved = True
 
     def save(self, session=None):
@@ -172,11 +176,14 @@ class SQLStorableMixin(base.AbstractStorableMixin):
     def update(self, session=None):
         # TODO(efrolov): Add filters arameters.
         with sessions.session_manager(self._engine, session) as s:
-            result = self._table.update(
-                engine=self._engine,
-                ids=self._get_prepared_data(self.get_id_properties()),
-                data=self._get_prepared_data(self.get_data_properties()),
-                session=s)
+            try:
+                result = self._table.update(
+                    engine=self._engine,
+                    ids=self._get_prepared_data(self.get_id_properties()),
+                    data=self._get_prepared_data(self.get_data_properties()),
+                    session=s)
+            except exc.Conflict as e:
+                raise exceptions.ConflictRecords(model=self, msg=e.message)
             if result.get_count() == 0:
                 raise exceptions.RecordNotFound(model=self, filters=None)
             if result.get_count() > 1:
