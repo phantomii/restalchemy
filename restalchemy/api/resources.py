@@ -143,11 +143,13 @@ class ResourceRelationship(AbstractResourceProperty):
 @six.add_metaclass(abc.ABCMeta)
 class AbstractResource(object):
 
-    def __init__(self, model_class, name_map=None, hidden_fields=None):
+    def __init__(self, model_class, name_map=None, hidden_fields=None,
+                 convert_underscore=True):
         super(AbstractResource, self).__init__()
         self._model_class = model_class
         self._name_map = name_map or {}
         self._hidden_fields = hidden_fields or []
+        self._convert_underscore = convert_underscore
         ResourceMap.add_model_to_resource_mapping(model_class, self)
 
     @abc.abstractmethod
@@ -167,8 +169,9 @@ class AbstractResource(object):
         return self._hidden_fields
 
     def get_resource_field_name(self, model_field_name):
-        return self._m2r_name_map.get(
-            model_field_name, model_field_name).replace('_', '-')
+        name = self._m2r_name_map.get(
+            model_field_name, model_field_name)
+        return name.replace('_', '-') if self._convert_underscore else name
 
     def is_public_field(self, model_field_name):
         return not (model_field_name.startswith('_') or
