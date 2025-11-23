@@ -1,68 +1,51 @@
-REST Alchemy
+==========================================
+Project Moved to InfraGuys Organization
+==========================================
+
+This repository has been moved and is now part of the **InfraGuys** organization.
+
+New Location
 ============
 
-.. image:: https://travis-ci.org/phantomii/restalchemy.svg?branch=master
-    :target: https://travis-ci.org/phantomii/restalchemy
+The project has been migrated to: 
+https://github.com/infraguys/restalchemy
 
-The Python REST HTTP Toolkit and Object Relational Mapper.
+Development Status
+==================
 
+- ✅ **Active development** continues in the new repository
+- ❌ **This repository is archived** and no longer maintained
+- 🔄 All issues, pull requests, and discussions should be directed to the new location
 
+About the New Home
+==================
 
-Migration commands
-------------------
+The project is now developed as part of the **Genesis Core** platform - an intelligent infrastructure management platform that provides:
 
-Create migrations:
+- Advanced infrastructure orchestration
+- Intelligent resource management
+- Enterprise-grade deployment capabilities
+- Enhanced monitoring and analytics
 
-::
+Important Notice
+================
 
-  $ ra-new-migration --path examples/migrations/ --message "1st migration"
-  $ ra-new-migration --path examples/migrations/ --message "2st migration" --depend 1st
-  $ ra-new-migration --path examples/migrations/ --message "3st migration" --depend 2st
-  $ ra-new-migration --path examples/migrations/ --message "4st migration"
-  $ ra-new-migration --path examples/migrations/ --message "5st migration" --depend 3st --depend 4st
+Please update your git remotes and dependencies:
 
+.. code-block:: bash
 
-Apply migrations:
+    git remote set-url origin https://github.com/infraguys/restalchemy.git
 
-::
+For package managers, update your dependency references to point to the new location.
 
-  $ ra-apply-migration --path examples/migrations/ --db-connection mysql://test:test@localhost/test -m 5st
-  > upgrade 1st
-  > upgrade 2st
-  > upgrade 3st
-  > upgrade 4st
-  > upgrade 5st
+Links
+=====
 
+- **New Repository**: https://github.com/infraguys/restalchemy
+- **InfraGuys Organization**: https://github.com/infraguys
+- **Genesis Core Platform**: https://genesis-core.ru/
 
-Rolled back migrations:
+Thank you for your continued interest in this project! We look forward to building the future of infrastructure management together.
 
-::
-
-  $ ra-rollback-migration --path examples/migrations/ --db-connection mysql://test:test@localhost/test -m 4st
-  > downgrade 5st
-  > downgrade 4st
-
-::
-
-  $ ra-rollback-migration --path examples/migrations/ --db-connection mysql://test:test@localhost/test -m 1st
-  > downgrade 3st
-  > downgrade 2st
-  > downgrade 1st
-
-
-Tests
------
-
-Run tests for python 2.7
-
-::
-
-  $ tox -e py27
-
-
-Run functional tests (python 2.7)
-
-::
-
-  $ export DATABASE_URI="mysql://test:test@localhost/test"
-  $ tox -e functional
+---
+*This repository is read-only and no longer accepts issues or pull requests.*
